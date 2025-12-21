@@ -8,10 +8,6 @@ export default {
   theme: {
     extend: {
       colors: {
-<<<<<<< HEAD
-        background: '#050506',
-        foreground: '#f4f4f5',
-=======
         background: {
           DEFAULT: '#050506',
           light: '#ffffff',
@@ -20,20 +16,12 @@ export default {
           DEFAULT: '#f4f4f5',
           light: '#0a0a0a',
         },
->>>>>>> c315a4020eb8d25b22caf84cc7e3ea2df752fed4
         primary: {
           DEFAULT: '#780606',
           foreground: '#ffffff',
         },
         secondary: {
           DEFAULT: '#111014',
-<<<<<<< HEAD
-          foreground: '#d4d4d8',
-        },
-        accent: {
-          DEFAULT: '#1b1b22',
-          foreground: '#f4f4f5',
-=======
           light: '#f5f5f5',
           foreground: {
             DEFAULT: '#d4d4d8',
@@ -47,18 +35,11 @@ export default {
             DEFAULT: '#f4f4f5',
             light: '#0a0a0a',
           },
->>>>>>> c315a4020eb8d25b22caf84cc7e3ea2df752fed4
         },
         success: '#22c55e',
         warning: '#facc15',
         muted: {
           DEFAULT: '#1a1a22',
-<<<<<<< HEAD
-          foreground: '#8f8f9a',
-        },
-        border: '#1f1f25',
-        input: '#1f1f25',
-=======
           light: '#e5e5e5',
           foreground: {
             DEFAULT: '#8f8f9a',
@@ -73,7 +54,6 @@ export default {
           DEFAULT: '#1f1f25',
           light: '#f5f5f5',
         },
->>>>>>> c315a4020eb8d25b22caf84cc7e3ea2df752fed4
         ring: '#780606',
       },
       fontFamily: {

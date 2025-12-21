@@ -8,7 +8,7 @@
   color-scheme: dark;
 }
 
-@layer base {
+/* Base styles */
   * {
     @apply border-border;
     /* Performance optimizations */
@@ -169,8 +169,7 @@
     --input: #1f1f25;
   }
 
-}
-
+/* Utilities */
 @layer utilities {
   .bg-grid-pattern {
     background-image: radial-gradient(circle, rgba(255, 255, 255, 0.05) 1px, transparent 1px);

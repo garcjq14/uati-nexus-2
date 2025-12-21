@@ -30,12 +30,9 @@ export default defineConfig({
         },
       },
     },
-<<<<<<< HEAD
-=======
     // Performance optimizations
     minify: 'esbuild',
     cssMinify: true,
     chunkSizeWarningLimit: 1000,
->>>>>>> c315a4020eb8d25b22caf84cc7e3ea2df752fed4
   },
 })
