@@ -1,0 +1,14 @@
+[
+  {
+    "pluginKey": "paradigms",
+    "name": "Mapa de Paradigmas",
+    "description": "Sistema de visualização e gerenciamento de paradigmas de programação e linguagens",
+    "config": {
+      "enabled": true
+    }
+  }
+]
+
+
+
+

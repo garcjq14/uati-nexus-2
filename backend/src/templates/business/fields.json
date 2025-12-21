@@ -1,0 +1,61 @@
+[
+  {
+    "entity": "Project",
+    "fieldName": "type",
+    "fieldType": "select",
+    "label": "Tipo de Projeto",
+    "required": false,
+    "options": "[\"Case Study\", \"Business Plan\", \"Market Analysis\", \"Strategy\"]",
+    "defaultValue": "Case Study",
+    "order": 0
+  },
+  {
+    "entity": "Project",
+    "fieldName": "industry",
+    "fieldType": "string",
+    "label": "Indústria",
+    "required": false,
+    "defaultValue": "",
+    "order": 1
+  },
+  {
+    "entity": "Project",
+    "fieldName": "targetMarket",
+    "fieldType": "string",
+    "label": "Mercado-Alvo",
+    "required": false,
+    "defaultValue": "",
+    "order": 2
+  },
+  {
+    "entity": "Project",
+    "fieldName": "budget",
+    "fieldType": "number",
+    "label": "Orçamento (R$)",
+    "required": false,
+    "defaultValue": "0",
+    "order": 3
+  },
+  {
+    "entity": "Project",
+    "fieldName": "keyMetrics",
+    "fieldType": "array",
+    "label": "Métricas-Chave (KPIs)",
+    "required": false,
+    "defaultValue": "[]",
+    "order": 4
+  },
+  {
+    "entity": "Project",
+    "fieldName": "stakeholders",
+    "fieldType": "array",
+    "label": "Stakeholders",
+    "required": false,
+    "defaultValue": "[]",
+    "order": 5
+  }
+]
+
+
+
+

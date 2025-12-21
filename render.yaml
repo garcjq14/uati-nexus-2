@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: uati-nexus-backend
+    env: node
+    plan: starter
+    region: oregon
+    rootDir: backend
+    buildCommand: npm install && npx prisma generate && npm run build
+    # Explicação do buildCommand:
+    # 1. npm install - Instala todas as dependências
+    # 2. npx prisma generate - Gera o Prisma Client baseado no schema
+    # 3. npm run build - Compila o TypeScript para JavaScript
+    # 
+    # IMPORTANTE: As tabelas NÃO são criadas durante o build
+    # Você DEVE chamar /api/setup-db após o primeiro deploy para criar as tabelas
+    # Depois, chame /api/init para popular o banco com dados iniciais
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+

@@ -1,0 +1,22 @@
+[
+  {
+    "pluginKey": "business-metrics",
+    "name": "Métricas de Negócio",
+    "description": "Sistema de acompanhamento de KPIs e métricas de negócio",
+    "config": {
+      "enabled": true
+    }
+  },
+  {
+    "pluginKey": "case-studies",
+    "name": "Estudos de Caso",
+    "description": "Sistema de gerenciamento de estudos de caso",
+    "config": {
+      "enabled": true
+    }
+  }
+]
+
+
+
+

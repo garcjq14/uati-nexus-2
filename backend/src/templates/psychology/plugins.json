@@ -1,0 +1,30 @@
+[
+  {
+    "pluginKey": "theories",
+    "name": "Mapa de Teorias",
+    "description": "Sistema de visualização e gerenciamento de teorias psicológicas",
+    "config": {
+      "enabled": true
+    }
+  },
+  {
+    "pluginKey": "case-studies",
+    "name": "Estudos de Caso Clínicos",
+    "description": "Sistema de gerenciamento de estudos de caso clínicos",
+    "config": {
+      "enabled": true
+    }
+  },
+  {
+    "pluginKey": "assessment-tools",
+    "name": "Ferramentas de Avaliação",
+    "description": "Sistema de ferramentas de avaliação psicológica",
+    "config": {
+      "enabled": true
+    }
+  }
+]
+
+
+
+

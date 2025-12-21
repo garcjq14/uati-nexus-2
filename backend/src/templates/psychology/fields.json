@@ -1,0 +1,52 @@
+[
+  {
+    "entity": "Project",
+    "fieldName": "type",
+    "fieldType": "select",
+    "label": "Tipo de Projeto",
+    "required": false,
+    "options": "[\"Case Study\", \"Research\", \"Therapy Plan\", \"Assessment\"]",
+    "defaultValue": "Case Study",
+    "order": 0
+  },
+  {
+    "entity": "Project",
+    "fieldName": "theoreticalFramework",
+    "fieldType": "string",
+    "label": "Referencial Teórico",
+    "required": false,
+    "defaultValue": "",
+    "order": 1
+  },
+  {
+    "entity": "Project",
+    "fieldName": "population",
+    "fieldType": "string",
+    "label": "População/Público-Alvo",
+    "required": false,
+    "defaultValue": "",
+    "order": 2
+  },
+  {
+    "entity": "Project",
+    "fieldName": "methodology",
+    "fieldType": "string",
+    "label": "Metodologia",
+    "required": false,
+    "defaultValue": "",
+    "order": 3
+  },
+  {
+    "entity": "Project",
+    "fieldName": "ethicsApproval",
+    "fieldType": "boolean",
+    "label": "Aprovação Ética",
+    "required": false,
+    "defaultValue": "false",
+    "order": 4
+  }
+]
+
+
+
+

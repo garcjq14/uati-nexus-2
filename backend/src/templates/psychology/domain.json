@@ -1,0 +1,15 @@
+{
+  "code": "psychology",
+  "name": "Psicologia",
+  "description": "Domínio para cursos de psicologia, terapia, análise comportamental e áreas relacionadas",
+  "icon": "Brain",
+  "color": "#8b5cf6",
+  "config": {
+    "projectTypes": ["Case Study", "Research", "Therapy Plan", "Assessment"],
+    "defaultProjectType": "Case Study"
+  }
+}
+
+
+
+

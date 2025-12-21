@@ -1,0 +1,30 @@
+[
+  {
+    "pluginKey": "hardware-specs",
+    "name": "Especificações de Hardware",
+    "description": "Sistema de gerenciamento de especificações de hardware",
+    "config": {
+      "enabled": true
+    }
+  },
+  {
+    "pluginKey": "simulation",
+    "name": "Integração com Simuladores",
+    "description": "Integração com plataformas de simulação robótica",
+    "config": {
+      "enabled": true
+    }
+  },
+  {
+    "pluginKey": "prototyping",
+    "name": "Sistema de Prototipagem",
+    "description": "Ferramentas para prototipagem rápida",
+    "config": {
+      "enabled": true
+    }
+  }
+]
+
+
+
+

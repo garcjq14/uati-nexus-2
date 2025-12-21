@@ -1,0 +1,15 @@
+{
+  "code": "business",
+  "name": "Business & Administração",
+  "description": "Domínio para cursos de administração, negócios, marketing, gestão e áreas relacionadas",
+  "icon": "TrendingUp",
+  "color": "#10b981",
+  "config": {
+    "projectTypes": ["Case Study", "Business Plan", "Market Analysis", "Strategy"],
+    "defaultProjectType": "Case Study"
+  }
+}
+
+
+
+

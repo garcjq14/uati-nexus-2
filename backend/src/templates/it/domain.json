@@ -1,0 +1,15 @@
+{
+  "code": "it",
+  "name": "Tecnologia da Informação",
+  "description": "Domínio para cursos de programação, desenvolvimento de software, ciência da computação e áreas relacionadas",
+  "icon": "Code",
+  "color": "#3b82f6",
+  "config": {
+    "projectTypes": ["Dev", "Design", "Research"],
+    "defaultProjectType": "Dev"
+  }
+}
+
+
+
+

@@ -1,0 +1,61 @@
+[
+  {
+    "entity": "Project",
+    "fieldName": "type",
+    "fieldType": "select",
+    "label": "Tipo de Projeto",
+    "required": false,
+    "options": "[\"Hardware\", \"Software\", \"Simulation\", \"Prototype\"]",
+    "defaultValue": "Prototype",
+    "order": 0
+  },
+  {
+    "entity": "Project",
+    "fieldName": "hardwareSpecs",
+    "fieldType": "string",
+    "label": "Especificações de Hardware",
+    "required": false,
+    "defaultValue": "",
+    "order": 1
+  },
+  {
+    "entity": "Project",
+    "fieldName": "sensors",
+    "fieldType": "array",
+    "label": "Sensores Utilizados",
+    "required": false,
+    "defaultValue": "[]",
+    "order": 2
+  },
+  {
+    "entity": "Project",
+    "fieldName": "actuators",
+    "fieldType": "array",
+    "label": "Atuadores",
+    "required": false,
+    "defaultValue": "[]",
+    "order": 3
+  },
+  {
+    "entity": "Project",
+    "fieldName": "programmingLanguage",
+    "fieldType": "string",
+    "label": "Linguagem de Programação",
+    "required": false,
+    "defaultValue": "",
+    "order": 4
+  },
+  {
+    "entity": "Project",
+    "fieldName": "simulationPlatform",
+    "fieldType": "string",
+    "label": "Plataforma de Simulação",
+    "required": false,
+    "defaultValue": "",
+    "order": 5
+  }
+]
+
+
+
+

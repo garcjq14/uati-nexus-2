@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
+    
+    <!-- PWA Meta Tags -->
+    <meta name="application-name" content="UATI Nexus" />
+    <meta name="description" content="Sistema de gerenciamento de aprendizado para autodidatas" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="msapplication-TileColor" content="#780606" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    <meta name="theme-color" content="#780606" />
+    
+    <!-- iOS Safari PWA -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="UATI Nexus" />
+    <meta name="apple-touch-fullscreen" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png" />
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- Title -->
+    <title>UATI Nexus</title>
+    
+    <!-- PWA iOS Scripts -->
+    <script>
+      // Detectar se está rodando como PWA no iOS
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                          (window.navigator.standalone === true) ||
+                          document.referrer.includes('android-app://');
+      
+      if (isStandalone) {
+        document.documentElement.classList.add('pwa-standalone');
+        // Prevenir scroll bounce no iOS quando em modo standalone
+        document.body.style.overscrollBehavior = 'none';
+      }
+      
+      // Prevenir iOS Safari de mostrar barra de endereço ao rolar
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          if (window.scrollY === 0) {
+            window.scrollTo(0, 1);
+          }
+        }, 0);
+      });
+      
+      // Prevenir zoom em double tap (apenas em PWA)
+      if (isStandalone) {
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function(event) {
+          const now = Date.now();
+          if (now - lastTouchEnd <= 300) {
+            event.preventDefault();
+          }
+          lastTouchEnd = now;
+        }, { passive: false });
+      }
+      
+      // Prevenir pull-to-refresh em modo standalone
+      if (isStandalone) {
+        let touchStartY = 0;
+        document.addEventListener('touchstart', function(e) {
+          touchStartY = e.touches[0].clientY;
+        }, { passive: true });
+        
+        document.addEventListener('touchmove', function(e) {
+          if (window.scrollY === 0 && e.touches[0].clientY > touchStartY) {
+            e.preventDefault();
+          }
+        }, { passive: false });
+      }
+    </script>
+  </head>
+  <body style="margin: 0; padding: 0; background: #050506; color: #f4f4f5;">
+    <div id="root"></div>
+    <noscript>
+      <div style="display: flex; align-items: center; justify-content: center; height: 100vh; flex-direction: column; gap: 1rem;">
+        <div style="font-size: 2rem; font-weight: bold; color: #780606;">UATI NEXUS</div>
+        <div style="color: #999;">JavaScript está desabilitado. Por favor, habilite JavaScript para usar esta aplicação.</div>
+      </div>
+    </noscript>
+    <script>
+      // Limpar qualquer conteúdo padrão do Vite que possa estar sendo servido
+      (function() {
+        const root = document.getElementById('root');
+        if (root) {
+          // Verificar se há conteúdo padrão do Vite (logos, "Vite + React", etc)
+          const viteContent = root.querySelector('a[href*="vite"], img[src*="vite"], img[alt*="Vite"], img[alt*="React"]');
+          if (viteContent || root.textContent.includes('count is') || root.textContent.includes('Edit src/App.tsx')) {
+            console.warn('Conteúdo padrão do Vite detectado, limpando...');
+            root.innerHTML = '';
+          }
+        }
+        
+        // Limpar service workers imediatamente em desenvolvimento
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            for(let registration of registrations) {
+              registration.unregister();
+            }
+          });
+        }
+        
+        // Limpar caches
+        if ('caches' in window) {
+          caches.keys().then(function(names) {
+            for (let name of names) {
+              caches.delete(name);
+            }
+          });
+        }
+      })();
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

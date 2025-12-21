@@ -1,0 +1,15 @@
+{
+  "code": "robotics",
+  "name": "Robótica",
+  "description": "Domínio para cursos de robótica, automação, inteligência artificial e áreas relacionadas",
+  "icon": "Cog",
+  "color": "#f59e0b",
+  "config": {
+    "projectTypes": ["Hardware", "Software", "Simulation", "Prototype"],
+    "defaultProjectType": "Prototype"
+  }
+}
+
+
+
+

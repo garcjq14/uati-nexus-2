@@ -1,0 +1,28 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copiar arquivos de dependências
+COPY package*.json ./
+COPY prisma ./prisma/
+
+# Instalar dependências
+# Usa npm install se package-lock.json não existir, senão usa npm ci
+RUN if [ -f package-lock.json ]; then npm ci --omit=dev; else npm install --production; fi
+
+# Gerar Prisma Client
+RUN npx prisma generate
+
+# Copiar código fonte
+COPY . .
+
+# Build
+RUN npm run build
+
+# Expor porta
+EXPOSE 3001
+
+# Comando de inicialização
+CMD ["npm", "start"]
+
+

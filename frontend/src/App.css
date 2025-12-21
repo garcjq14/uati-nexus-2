@@ -1,0 +1,40 @@
+#root {
+  min-height: 100vh;
+}
+
+:root {
+  --card-contain-default: 360px;
+  --card-contain-compact: 220px;
+  --section-contain-default: 520px;
+}
+
+.cv-card {
+  content-visibility: auto;
+  contain: layout paint style;
+  contain-intrinsic-size: var(--card-contain-default);
+  will-change: opacity, transform;
+  transition: none;
+}
+
+.cv-card[data-density='compact'] {
+  contain-intrinsic-size: var(--card-contain-compact);
+}
+
+.cv-section {
+  content-visibility: auto;
+  contain: layout paint style;
+  contain-intrinsic-size: var(--section-contain-default);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cv-card {
+    transition: none;
+  }
+}
+
+@supports not (content-visibility: auto) {
+  .cv-card,
+  .cv-section {
+    contain: unset;
+  }
+}

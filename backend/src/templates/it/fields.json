@@ -1,0 +1,52 @@
+[
+  {
+    "entity": "Project",
+    "fieldName": "technologies",
+    "fieldType": "array",
+    "label": "Tecnologias",
+    "required": false,
+    "defaultValue": "[]",
+    "order": 1
+  },
+  {
+    "entity": "Project",
+    "fieldName": "repository",
+    "fieldType": "string",
+    "label": "Repositório Git",
+    "required": false,
+    "defaultValue": "",
+    "order": 2
+  },
+  {
+    "entity": "Project",
+    "fieldName": "type",
+    "fieldType": "select",
+    "label": "Tipo de Projeto",
+    "required": false,
+    "options": "[\"Dev\", \"Design\", \"Research\"]",
+    "defaultValue": "Dev",
+    "order": 0
+  },
+  {
+    "entity": "Project",
+    "fieldName": "deploymentUrl",
+    "fieldType": "string",
+    "label": "URL de Deploy",
+    "required": false,
+    "defaultValue": "",
+    "order": 3
+  },
+  {
+    "entity": "Project",
+    "fieldName": "framework",
+    "fieldType": "string",
+    "label": "Framework Principal",
+    "required": false,
+    "defaultValue": "",
+    "order": 4
+  }
+]
+
+
+
+

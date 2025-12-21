@@ -1,0 +1,466 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "cockroachdb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String   @id @default(cuid())
+  email              String   @unique
+  name               String
+  password           String
+  role               String   @default("STUDENT")
+  avatar             String?
+  portfolio          String?
+  linkedin           String?
+  github             String?
+  twitter            String?
+  onboardingCompleted Boolean  @default(false)
+  currentCourseId    String?
+  currentCourse      Course?  @relation("CurrentCourse", fields: [currentCourseId], references: [id], onDelete: SetNull)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  // Relations
+  courses            Course[]
+  studySessions      StudySession[]
+  activities         Activity[]
+  notifications      Notification[]
+  notes              Note[]
+  curriculum         Curriculum[]
+  projects           Project[]
+  flashcards         Flashcard[]
+  resources          Resource[]
+  knowledgeNodes     KnowledgeNode[]
+  weeklySchedules    WeeklySchedule[]
+  manualCompetencies ManualCompetency[]
+
+  @@map("users")
+}
+
+model Domain {
+  id          String   @id @default(cuid())
+  code        String   @unique // "it", "business", "psychology", "robotics"
+  name        String   // "Tecnologia da Informação", "Business", etc.
+  description String?
+  icon        String?  // Nome do ícone Lucide
+  color       String?  // Cor primária do domínio
+  config      String   @default("{}") // JSON com configurações do domínio
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  courses     Course[]
+  domainFields DomainField[]
+  domainPlugins DomainPlugin[]
+
+  @@map("domains")
+}
+
+model DomainField {
+  id          String   @id @default(cuid())
+  domainId    String
+  domain      Domain   @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  entity      String   // "Project", "Curriculum", "Resource", etc.
+  fieldName   String   // "technologies", "repository", "type"
+  fieldType   String   // "string", "array", "number", "boolean", "select"
+  label       String   // Label para exibição
+  required    Boolean  @default(false)
+  options     String?  // JSON array para campos select
+  defaultValue String? // Valor padrão
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("domain_fields")
+  @@index([domainId, entity])
+}
+
+model DomainPlugin {
+  id          String   @id @default(cuid())
+  domainId    String
+  domain      Domain   @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  pluginKey   String   // "paradigms", "code-review", "business-metrics"
+  name        String
+  description String?
+  config      String   @default("{}") // Configurações do plugin
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("domain_plugins")
+  @@index([domainId, pluginKey])
+}
+
+model Course {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  domainId    String?
+  domain      Domain?  @relation(fields: [domainId], references: [id], onDelete: SetNull)
+  title       String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  currentUsers        User[]           @relation("CurrentCourse")
+  curriculum          Curriculum[]
+  projects            Project[]
+  flashcards          Flashcard[]
+  resources           Resource[]
+  notes                Note[]
+  knowledgeNodes      KnowledgeNode[]
+  studySessions        StudySession[]
+  activities          Activity[]
+  weeklySchedules     WeeklySchedule[]
+  manualCompetencies  ManualCompetency[]
+
+  @@map("courses")
+  @@index([userId])
+  @@index([domainId])
+}
+
+model Curriculum {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId    String?
+  course      Course?  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  code        String   // e.g., "CS101", "CS102"
+  title       String
+  description String?
+  syllabus    String?  // Ementa completa
+  order       Int
+  progress    Int      @default(0) // 0-100 (calculado automaticamente)
+  status      String   @default("locked") // locked, active, completed
+  block       String?  // Bloco ao qual pertence (e.g., "Bloco 1", "Bloco 2")
+  milestones  String   @default("[]") // JSON array de marcos [{title, completed}]
+  customFields String  @default("{}") // JSON para campos customizados de currículo
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  topics      Topic[]
+  powId       String?
+  pow         Project? @relation("CurriculumPoW", fields: [powId], references: [id])
+
+  @@map("curriculum")
+  @@index([userId])
+  @@index([courseId])
+}
+
+model Topic {
+  id           String   @id @default(cuid())
+  curriculumId String
+  curriculum   Curriculum @relation(fields: [curriculumId], references: [id], onDelete: Cascade)
+  title        String
+  description  String?
+  content      String?  // Conteúdo do tópico
+  order        Int
+  status       String   @default("not_read") // not_read, reading, completed
+  noteId       String?  // Fichamento associado
+  note         Note?    @relation(fields: [noteId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  resources    Resource[]
+
+  @@map("topics")
+  @@index([curriculumId])
+}
+
+model Note {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId    String?
+  course      Course?  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  title       String   // Conceito
+  content     String   // Explicação Feynman
+  connections String   @default("[]") // IDs de outras fichas (JSON array)
+  tags        String   @default("[]") // JSON array
+  references  String   @default("[]") // JSON array
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  topics      Topic[]
+
+  @@map("notes")
+  @@index([userId])
+  @@index([courseId])
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId    String?
+  course      Course?  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  requirements String? // Requisitos completos
+  technologies String  @default("[]") // Tecnologias chave (JSON array) - mantido para compatibilidade
+  deadline    DateTime? // Prazo
+  repository  String?  // Link para repositório - mantido para compatibilidade
+  type        String   @default("Dev") // Dev, Design, Research - mantido para compatibilidade
+  customFields String  @default("{}") // JSON com campos dinâmicos do domínio
+  status      String   @default("em_progresso") // em_progresso, finalizado
+  progress    Int      @default(0) // 0-100 (calculado automaticamente baseado em milestones)
+  priority    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tasks       Task[]
+  curriculum  Curriculum[] @relation("CurriculumPoW")
+  diary       DiaryEntry[]
+  milestones  Milestone[]
+
+  @@map("projects")
+  @@index([userId])
+  @@index([courseId])
+}
+
+model Milestone {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  completed   Boolean  @default(false)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("milestones")
+  @@index([projectId])
+}
+
+model Task {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title       String
+  status      String   @default("todo") // todo, doing, done
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("tasks")
+  @@index([projectId])
+}
+
+model Flashcard {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId    String?
+  course      Course?  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  deck        String   // e.g., "Conceitos Base", "Vocabulário Técnico"
+  front       String
+  back        String
+  lastReview  DateTime?
+  nextReview  DateTime?
+  easeFactor  Float    @default(2.5)
+  interval    Int      @default(1) // days
+  repetitions Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("flashcards")
+  @@index([userId])
+  @@index([courseId])
+  @@index([deck])
+  @@index([nextReview])
+}
+
+model Resource {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId    String?
+  course      Course?  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  topicId     String?
+  topic       Topic?   @relation(fields: [topicId], references: [id])
+  title       String
+  author      String?
+  format      String   // Livro, Audio, PDF, Video
+  status      String   @default("a_fazer") // a_fazer, lendo, concluido
+  url         String?
+  description String?
+  notes       String?
+  progress    Int      @default(0) // 0-100
+  tags        String   @default("[]") // JSON array
+  estimatedChapters Int?
+  customFields String  @default("{}") // JSON para recursos específicos do domínio
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  annotations ResourceAnnotation[]
+
+  @@map("resources")
+  @@index([userId])
+  @@index([courseId])
+  @@index([format])
+  @@index([topicId])
+}
+
+model ResourceAnnotation {
+  id         String   @id @default(cuid())
+  resourceId String
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  chapter    String?  // Capítulo ou seção
+  content    String   // Anotação
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("resource_annotations")
+  @@index([resourceId])
+}
+
+model DiaryEntry {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title       String
+  content     String   // Markdown
+  tags        String   @default("[]") // JSON array
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("diary_entries")
+  @@index([projectId])
+  @@index([createdAt])
+}
+
+model KnowledgeNode {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId    String?
+  course      Course?  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  label       String
+  type        String   @default("concept") // concept, theory, practice
+  x           Float    @default(0)
+  y           Float    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  connectionsFrom NodeConnection[] @relation("FromNode")
+  connectionsTo   NodeConnection[] @relation("ToNode")
+
+  @@map("knowledge_nodes")
+  @@index([userId])
+  @@index([courseId])
+}
+
+model NodeConnection {
+  id          String   @id @default(cuid())
+  fromNodeId  String
+  fromNode    KnowledgeNode @relation("FromNode", fields: [fromNodeId], references: [id], onDelete: Cascade)
+  toNodeId    String
+  toNode      KnowledgeNode @relation("ToNode", fields: [toNodeId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@map("node_connections")
+  @@index([fromNodeId])
+  @@index([toNodeId])
+}
+
+model StudySession {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId    String?
+  course      Course?  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  duration    Int      // minutes
+  type        String   @default("pomodoro") // pomodoro, focus, break
+  audio       String?  // rain, lofi, cafe
+  createdAt   DateTime @default(now())
+
+  @@map("study_sessions")
+  @@index([userId])
+  @@index([courseId])
+}
+
+model Activity {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId    String?
+  course      Course?  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  type        String   // pow_completed, flashcard_created, topic_read, etc.
+  title       String
+  description String?
+  createdAt   DateTime @default(now())
+
+  @@map("activities")
+  @@index([userId])
+  @@index([courseId])
+  @@index([createdAt])
+  @@index([type])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // review_due, deadline_approaching, achievement, etc.
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
+}
+
+model WeeklySchedule {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId    String?
+  course      Course?  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  title       String
+  type        String   // Leitura, Sprint, Estudo, Projeto
+  day         String   // DOM, SEG, TER, QUA, QUI, SEX, SAB
+  time        String?  // Hora opcional (e.g., "09:00")
+  description String?
+  completed   Boolean  @default(false)
+  weekStart   DateTime // Data de início da semana (para identificar qual semana)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("weekly_schedules")
+  @@index([userId])
+  @@index([courseId])
+  @@index([weekStart])
+  @@index([day])
+}
+
+model ManualCompetency {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId    String?
+  course      Course?  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  name        String
+  strength    Int      @default(0) // 0-100
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("manual_competencies")
+  @@index([userId])
+  @@index([courseId])
+}
+
