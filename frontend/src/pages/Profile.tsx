@@ -9,7 +9,9 @@ import {
   LogOut, Mail, Clock, BookOpen, Code, TrendingUp, Trophy, Upload,
   Brain, Activity, ArrowRight, Edit, Save, X, Plus, Trash2, 
   GraduationCap, Briefcase, Languages, Award, FileText, Target,
-  Globe, Github, Linkedin, Twitter, ExternalLink, Calendar, MapPin
+  Globe, Github, Linkedin, Twitter, ExternalLink, Calendar, MapPin,
+  CheckCircle2, PlayCircle, Video, File, Layers, Zap, BarChart3,
+  Clock3, BookMarked, PenTool, CheckSquare
 } from 'lucide-react';
 import { useState, useRef, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -101,6 +103,21 @@ interface ProfileData {
   publications: Publication[];
 }
 
+interface StudySession {
+  id: string;
+  duration: number;
+  type: string;
+  createdAt: string;
+}
+
+interface Activity {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  createdAt: string;
+}
+
 const STORAGE_KEY = 'user_profile_data';
 
 export default function Profile() {
@@ -112,6 +129,9 @@ export default function Profile() {
   const [nameValue, setNameValue] = useState(user?.name || '');
   const [competences, setCompetences] = useState<Competence[]>([]);
   const [loadingCompetences, setLoadingCompetences] = useState(true);
+  const [studySessions, setStudySessions] = useState<StudySession[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [loadingUatiData, setLoadingUatiData] = useState(true);
   const [profileData, setProfileData] = useState<ProfileData>({
     bio: '',
     objective: '',
@@ -159,6 +179,29 @@ export default function Profile() {
       }
     };
     fetchCompetences();
+  }, []);
+
+  // Buscar dados da UATI (sessões de estudo e atividades)
+  useEffect(() => {
+    const fetchUatiData = async () => {
+      try {
+        setLoadingUatiData(true);
+        const [sessionsResponse, activitiesResponse] = await Promise.all([
+          api.get('/timer/history').catch(() => ({ data: [] })),
+          api.get('/activities?limit=50').catch(() => ({ data: [] })),
+        ]);
+        
+        setStudySessions(Array.isArray(sessionsResponse.data) ? sessionsResponse.data : []);
+        setActivities(Array.isArray(activitiesResponse.data) ? activitiesResponse.data : []);
+      } catch (error) {
+        console.error('Failed to fetch UATI data:', error);
+        setStudySessions([]);
+        setActivities([]);
+      } finally {
+        setLoadingUatiData(false);
+      }
+    };
+    fetchUatiData();
   }, []);
 
   const handleLogout = async () => {
@@ -248,6 +291,86 @@ export default function Profile() {
     );
   }, [courseData]);
 
+  // Estatísticas de matérias
+  const curriculumStats = useMemo(() => {
+    const completed = courseData.curriculum.filter(c => c.status === 'completed');
+    const active = courseData.curriculum.filter(c => c.status === 'active');
+    const locked = courseData.curriculum.filter(c => c.status === 'locked');
+    const totalProgress = courseData.curriculum.length > 0
+      ? Math.round(courseData.curriculum.reduce((sum, c) => sum + c.progress, 0) / courseData.curriculum.length)
+      : 0;
+    
+    return {
+      total: courseData.curriculum.length,
+      completed: completed.length,
+      active: active.length,
+      locked: locked.length,
+      averageProgress: totalProgress,
+    };
+  }, [courseData.curriculum]);
+
+  // Estatísticas de recursos
+  const resourcesStats = useMemo(() => {
+    const completed = courseData.resources.filter(r => r.status === 'concluido');
+    const reading = courseData.resources.filter(r => r.status === 'lendo');
+    const totalProgress = courseData.resources.length > 0
+      ? Math.round(courseData.resources.reduce((sum, r) => sum + (r.progress || 0), 0) / courseData.resources.length)
+      : 0;
+    
+    return {
+      total: courseData.resources.length,
+      completed: completed.length,
+      reading: reading.length,
+      averageProgress: totalProgress,
+      byFormat: {
+        livro: courseData.resources.filter(r => r.format === 'Livro').length,
+        video: courseData.resources.filter(r => r.format === 'Video').length,
+        pdf: courseData.resources.filter(r => r.format === 'PDF').length,
+        audio: courseData.resources.filter(r => r.format === 'Audio').length,
+      },
+    };
+  }, [courseData.resources]);
+
+  // Estatísticas de flashcards
+  const flashcardsStats = useMemo(() => {
+    const total = courseData.flashcards.length;
+    const due = stats.flashcardsDue || 0;
+    const decks = new Set(courseData.flashcards.map(f => f.deck)).size;
+    
+    return { total, due, decks };
+  }, [courseData.flashcards, stats.flashcardsDue]);
+
+  // Estatísticas de sessões de estudo
+  const sessionsStats = useMemo(() => {
+    const total = studySessions.length;
+    const totalMinutes = studySessions.reduce((sum, s) => sum + (s.duration || 0), 0);
+    const totalHours = Math.round((totalMinutes / 60) * 10) / 10;
+    const thisWeek = studySessions.filter(s => {
+      const sessionDate = new Date(s.createdAt);
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      return sessionDate >= weekAgo;
+    }).length;
+    
+    return { total, totalHours, thisWeek };
+  }, [studySessions]);
+
+  // Matérias agrupadas por status
+  const curriculumByStatus = useMemo(() => {
+    return {
+      completed: courseData.curriculum.filter(c => c.status === 'completed').sort((a, b) => b.progress - a.progress),
+      active: courseData.curriculum.filter(c => c.status === 'active').sort((a, b) => b.progress - a.progress),
+      locked: courseData.curriculum.filter(c => c.status === 'locked'),
+    };
+  }, [courseData.curriculum]);
+
+  // Recursos mais estudados
+  const topResources = useMemo(() => {
+    return [...courseData.resources]
+      .sort((a, b) => (b.progress || 0) - (a.progress || 0))
+      .slice(0, 6);
+  }, [courseData.resources]);
+
   const competencesByCategory = useMemo(() => {
     const grouped: Record<string, Competence[]> = {};
     competences.forEach(comp => {
@@ -266,7 +389,7 @@ export default function Profile() {
       .slice(0, 6);
   }, [competences]);
 
-  // Handlers para edição
+  // Handlers para edição (mantidos do código anterior)
   const handleAddExperience = () => {
     const newExp: Experience = {
       id: Date.now().toString(),
@@ -525,6 +648,304 @@ export default function Profile() {
             </div>
           </CardContent>
         </Card>
+      </motion.div>
+
+      {/* Seção UATI - Atividades na Plataforma */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <p className="text-xs font-mono uppercase tracking-[0.3em] text-primary mb-1">UATI Nexus</p>
+            <h2 className="text-xl font-serif font-light text-white">Atividades na Plataforma</h2>
+          </div>
+        </div>
+
+        {/* Estatísticas Gerais UATI */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <Card className="border border-white/10 bg-transparent">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
+                  <GraduationCap className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-white">{curriculumStats.total}</div>
+                  <div className="text-xs text-muted-foreground">Matérias</div>
+                </div>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {curriculumStats.completed} concluídas • {curriculumStats.active} ativas
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border border-white/10 bg-transparent">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                  <BookOpen className="h-4 w-4 text-blue-400" />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-white">{resourcesStats.total}</div>
+                  <div className="text-xs text-muted-foreground">Recursos</div>
+                </div>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {resourcesStats.completed} concluídos • {resourcesStats.reading} lendo
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border border-white/10 bg-transparent">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 rounded-lg bg-green-500/10 border border-green-500/20">
+                  <Zap className="h-4 w-4 text-green-400" />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-white">{flashcardsStats.total}</div>
+                  <div className="text-xs text-muted-foreground">Flashcards</div>
+                </div>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {flashcardsStats.decks} decks • {flashcardsStats.due} para revisar
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border border-white/10 bg-transparent">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                  <Clock3 className="h-4 w-4 text-purple-400" />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-white">{sessionsStats.totalHours.toFixed(1)}</div>
+                  <div className="text-xs text-muted-foreground">Horas Estudadas</div>
+                </div>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {sessionsStats.total} sessões • {sessionsStats.thisWeek} esta semana
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Matérias Cursadas */}
+        {curriculumStats.total > 0 && (
+          <Card className="border border-white/10 bg-transparent mb-6">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <Layers className="h-5 w-5 text-primary" />
+                  Matérias Cursadas
+                </h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/curriculum')}
+                  className="border-white/10 hover:bg-white/5"
+                >
+                  Ver Todas
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Matérias Concluídas */}
+              {curriculumByStatus.completed.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-semibold text-green-400 mb-3 flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4" />
+                    Concluídas ({curriculumByStatus.completed.length})
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {curriculumByStatus.completed.slice(0, 4).map((subject) => (
+                      <div key={subject.id} className="p-3 rounded-lg border border-green-500/20 bg-green-500/[0.02]">
+                        <div className="flex items-center justify-between mb-2">
+                          <div>
+                            <h5 className="text-sm font-semibold text-white">{subject.title}</h5>
+                            <p className="text-xs text-muted-foreground">{subject.code}</p>
+                          </div>
+                          <span className="text-xs font-bold text-green-400">100%</span>
+                        </div>
+                        {subject.block && (
+                          <p className="text-xs text-muted-foreground">{subject.block}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Matérias Ativas */}
+              {curriculumByStatus.active.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-semibold text-primary mb-3 flex items-center gap-2">
+                    <PlayCircle className="h-4 w-4" />
+                    Em Andamento ({curriculumByStatus.active.length})
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {curriculumByStatus.active.slice(0, 4).map((subject) => (
+                      <div key={subject.id} className="p-3 rounded-lg border border-white/5 bg-white/[0.02]">
+                        <div className="flex items-center justify-between mb-2">
+                          <div>
+                            <h5 className="text-sm font-semibold text-white">{subject.title}</h5>
+                            <p className="text-xs text-muted-foreground">{subject.code}</p>
+                          </div>
+                          <span className="text-xs font-bold text-primary">{subject.progress}%</span>
+                        </div>
+                        <div className="relative w-full bg-white/10 h-1 rounded-full overflow-hidden mt-2">
+                          <div
+                            className="absolute inset-y-0 left-0 bg-primary rounded-full"
+                            style={{ width: `${subject.progress}%` }}
+                          />
+                        </div>
+                        {subject.block && (
+                          <p className="text-xs text-muted-foreground mt-2">{subject.block}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Recursos Estudados */}
+        {resourcesStats.total > 0 && (
+          <Card className="border border-white/10 bg-transparent mb-6">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <BookOpen className="h-5 w-5 text-primary" />
+                  Recursos Estudados
+                </h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/resources')}
+                  className="border-white/10 hover:bg-white/5"
+                >
+                  Ver Todos
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                <div className="p-3 rounded-lg border border-white/5 bg-white/[0.02] text-center">
+                  <BookMarked className="h-5 w-5 text-blue-400 mx-auto mb-1" />
+                  <div className="text-lg font-bold text-white">{resourcesStats.byFormat.livro}</div>
+                  <div className="text-xs text-muted-foreground">Livros</div>
+                </div>
+                <div className="p-3 rounded-lg border border-white/5 bg-white/[0.02] text-center">
+                  <Video className="h-5 w-5 text-red-400 mx-auto mb-1" />
+                  <div className="text-lg font-bold text-white">{resourcesStats.byFormat.video}</div>
+                  <div className="text-xs text-muted-foreground">Vídeos</div>
+                </div>
+                <div className="p-3 rounded-lg border border-white/5 bg-white/[0.02] text-center">
+                  <File className="h-5 w-5 text-yellow-400 mx-auto mb-1" />
+                  <div className="text-lg font-bold text-white">{resourcesStats.byFormat.pdf}</div>
+                  <div className="text-xs text-muted-foreground">PDFs</div>
+                </div>
+                <div className="p-3 rounded-lg border border-white/5 bg-white/[0.02] text-center">
+                  <PlayCircle className="h-5 w-5 text-green-400 mx-auto mb-1" />
+                  <div className="text-lg font-bold text-white">{resourcesStats.byFormat.audio}</div>
+                  <div className="text-xs text-muted-foreground">Áudios</div>
+                </div>
+              </div>
+
+              {topResources.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold text-white mb-3">Recursos Mais Estudados</h4>
+                  <div className="space-y-2">
+                    {topResources.map((resource) => (
+                      <div key={resource.id} className="p-3 rounded-lg border border-white/5 bg-white/[0.02]">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex-1">
+                            <h5 className="text-sm font-semibold text-white">{resource.title}</h5>
+                            {resource.author && (
+                              <p className="text-xs text-muted-foreground">{resource.author}</p>
+                            )}
+                          </div>
+                          <span className="text-xs font-bold text-primary">{resource.progress || 0}%</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={cn(
+                            "text-xs px-2 py-1 rounded-full",
+                            resource.format === 'Livro' ? "bg-blue-500/20 text-blue-400" :
+                            resource.format === 'Video' ? "bg-red-500/20 text-red-400" :
+                            resource.format === 'PDF' ? "bg-yellow-500/20 text-yellow-400" :
+                            "bg-green-500/20 text-green-400"
+                          )}>
+                            {resource.format}
+                          </span>
+                          <div className="flex-1 relative bg-white/10 h-1 rounded-full overflow-hidden">
+                            <div
+                              className="absolute inset-y-0 left-0 bg-primary rounded-full"
+                              style={{ width: `${resource.progress || 0}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Atividades Recentes */}
+        {activities.length > 0 && (
+          <Card className="border border-white/10 bg-transparent">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <Activity className="h-5 w-5 text-primary" />
+                  Atividades Recentes
+                </h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/activities')}
+                  className="border-white/10 hover:bg-white/5"
+                >
+                  Ver Todas
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {activities.slice(0, 5).map((activity) => (
+                  <div key={activity.id} className="p-3 rounded-lg border border-white/5 bg-white/[0.02]">
+                    <div className="flex items-start gap-3">
+                      <div className="p-1.5 rounded-lg bg-primary/10 border border-primary/20">
+                        <Activity className="h-3 w-3 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <h5 className="text-sm font-semibold text-white">{activity.title}</h5>
+                        {activity.description && (
+                          <p className="text-xs text-muted-foreground mt-1">{activity.description}</p>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {new Date(activity.createdAt).toLocaleDateString('pt-BR', {
+                            day: '2-digit',
+                            month: 'short',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </motion.div>
 
       {/* Biografia e Objetivo */}
@@ -811,7 +1232,7 @@ export default function Profile() {
         </CardContent>
       </Card>
 
-      {/* Competências */}
+      {/* Competências Sincronizadas */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
