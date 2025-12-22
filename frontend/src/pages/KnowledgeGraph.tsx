@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import { Modal } from '../components/ui/modal';
 import { Input } from '../components/ui/input';
-import { Plus, Maximize2, ZoomIn, ZoomOut, Focus, Search, Download, Edit, Trash2, Map as MapIcon } from 'lucide-react';
+import { Plus, Maximize2, Focus, Search, Download, Edit, Trash2, Map as MapIcon } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { ContextualHelp } from '../components/help/ContextualHelp';
 import { useToast } from '../components/feedback/ToastSystem';
@@ -15,9 +15,7 @@ import ReactFlow, {
   useEdgesState,
   useReactFlow,
   ReactFlowProvider,
-  Panel,
-  Controls,
-  MiniMap
+  Panel
 } from 'reactflow';
 import type { NodeDragHandler } from 'reactflow';
 import type { Node, Edge } from 'reactflow';
@@ -58,7 +56,7 @@ function GraphContent() {
   const [updatingNode, setUpdatingNode] = useState(false);
   const [deletingNode, setDeletingNode] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
-  const { fitView, zoomIn, zoomOut, setCenter } = useReactFlow();
+  const { fitView, setCenter } = useReactFlow();
   const { success, error: showError } = useToast();
   const positionUpdateTimeoutRef = useRef<{ [key: string]: ReturnType<typeof setTimeout> }>({});
 
@@ -739,10 +737,6 @@ function GraphContent() {
                   <Maximize2 className="h-4 w-4" />
                   Apresentação
                 </Button>
-                <Button variant="outline" className="gap-2 border-white/10" onClick={handleExportGraph}>
-                  <Download className="h-4 w-4" />
-                  Exportar
-                </Button>
               </div>
             </CardContent>
           </Card>
@@ -878,45 +872,6 @@ function GraphContent() {
             style={{ width: '100%', height: '100%' }}
           >
             <Background color="#1a1a1a" gap={20} size={1} style={{ opacity: 0.2 }} />
-            <Controls 
-              className="bg-[#0d0d0d]/90 border-[#780606]/30 fill-[#780606] text-[#780606] hover:fill-white hover:text-white" 
-              showInteractive={false}
-            />
-            <MiniMap 
-               nodeColor={() => '#780606'} 
-               maskColor="rgba(0, 0, 0, 0.8)"
-               className="bg-black/80 border border-white/10 rounded-lg"
-            />
-            
-            <Panel position="bottom-right" className="flex flex-col gap-2">
-              <Button 
-                variant="outline" 
-                onClick={() => zoomIn()} 
-                className="h-12 w-12 p-0 rounded-lg bg-[#0d0d0d]/90 border-[#780606]/50 text-[#780606] hover:bg-[#780606]/20 hover:border-[#780606] hover:text-white transition-all touch-manipulation shadow-lg"
-                style={{ minHeight: '48px', minWidth: '48px' }}
-                title="Aumentar zoom"
-              >
-                <ZoomIn className="h-5 w-5" />
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => zoomOut()} 
-                className="h-12 w-12 p-0 rounded-lg bg-[#0d0d0d]/90 border-[#780606]/50 text-[#780606] hover:bg-[#780606]/20 hover:border-[#780606] hover:text-white transition-all touch-manipulation shadow-lg"
-                style={{ minHeight: '48px', minWidth: '48px' }}
-                title="Diminuir zoom"
-              >
-                <ZoomOut className="h-5 w-5" />
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => fitView()} 
-                className="h-12 w-12 p-0 rounded-lg bg-[#0d0d0d]/90 border-[#780606]/50 text-[#780606] hover:bg-[#780606]/20 hover:border-[#780606] hover:text-white transition-all touch-manipulation shadow-lg"
-                style={{ minHeight: '48px', minWidth: '48px' }}
-                title="Ajustar visualização"
-              >
-                <Focus className="h-5 w-5" />
-              </Button>
-            </Panel>
 
             {nodeForConnection && (
               <Panel position="top-center" className="m-4">

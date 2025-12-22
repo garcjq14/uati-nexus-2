@@ -81,7 +81,6 @@ const CompetencyCard = ({ name, strength, items, index }: {
     transition={{ delay: index * 0.03 }}
     className="group relative overflow-hidden rounded-xl bg-white/[0.02] border border-white/5 p-5 hover:border-primary/20 transition-all duration-200"
   >
-    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
     <div className="relative">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-white group-hover:text-primary transition-colors">{name}</h3>
@@ -114,7 +113,6 @@ const ActivityCard = ({ type, title, progress, icon: Icon, index }: {
     transition={{ delay: index * 0.1 }}
     className="group relative overflow-hidden rounded-xl bg-white/[0.02] border border-white/5 p-5 hover:border-primary/20 transition-all duration-200"
   >
-    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
     <div className="relative">
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3 flex-1">
@@ -136,9 +134,8 @@ const ActivityCard = ({ type, title, progress, icon: Icon, index }: {
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             transition={{ delay: index * 0.1 + 0.3, duration: 0.8, ease: "easeOut" }}
-            className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-primary/80 rounded-full"
+            className="absolute inset-y-0 left-0 bg-primary rounded-full"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
         </div>
       )}
     </div>
@@ -462,23 +459,22 @@ export default function Profile() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="rounded-2xl border border-white/10 bg-[#0b0b0f]/90"
+            className="border-b border-white/10 bg-transparent"
           >
             <div className="p-8">
               <div className="flex flex-col md:flex-row gap-6 items-end">
                 <div className="relative group">
-                  <div className="absolute -inset-1 bg-gradient-to-r from-primary to-primary/50 rounded-2xl blur opacity-30 group-hover:opacity-50 transition-opacity" />
                   <div className="relative">
                     <img
                       src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.name}&background=780606&color=fff`}
                       alt={user?.name}
-                      className="h-36 w-36 rounded-2xl border-4 border-[#050506] shadow-2xl object-cover bg-[#050506]"
+                      className="h-36 w-36 rounded-full border-2 border-white/10 object-cover bg-transparent"
                     />
                     <div className="absolute bottom-2 right-2 h-6 w-6 rounded-full bg-green-500 border-3 border-[#050506] shadow-lg ring-2 ring-green-500/50" />
                     <button
                       onClick={() => fileInputRef.current?.click()}
                       disabled={uploadingAvatar}
-                      className="absolute inset-0 rounded-2xl bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm"
+                      className="absolute inset-0 rounded-full bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
                     >
                       {uploadingAvatar ? (
                         <div className="h-8 w-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -566,7 +562,7 @@ export default function Profile() {
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-8">
               {/* O que estou fazendo */}
-              <Card className="border border-white/5 bg-white/[0.02] overflow-hidden backdrop-blur-sm">
+              <Card className="border-b border-white/10 bg-transparent">
                 <CardHeader className="border-b border-white/10 bg-white/5">
                   <CardTitle className="flex items-center gap-2 text-xl font-light text-white">
                     <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
@@ -596,7 +592,7 @@ export default function Profile() {
               </Card>
 
               {/* Competências Principais */}
-              <Card className="border border-white/5 bg-white/[0.02] overflow-hidden backdrop-blur-sm">
+              <Card className="border-b border-white/10 bg-transparent">
                 <CardHeader className="border-b border-white/10 bg-white/5">
                   <CardTitle className="flex items-center gap-2 text-xl font-light text-white">
                     <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
@@ -623,7 +619,7 @@ export default function Profile() {
 
               {/* Projetos em Destaque */}
               {(completedProjects.length > 0 || activeProjects.length > 0) && (
-                <Card className="border border-white/5 bg-white/[0.02] overflow-hidden backdrop-blur-sm">
+                <Card className="border-b border-white/10 bg-transparent">
                   <CardHeader className="border-b border-white/10 bg-white/5">
                     <CardTitle className="flex items-center gap-2 text-xl font-light text-white">
                       <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
@@ -664,7 +660,7 @@ export default function Profile() {
                                 initial={{ width: 0 }}
                                 animate={{ width: `${project.progress}%` }}
                                 transition={{ delay: index * 0.1 + 0.3, duration: 0.8, ease: "easeOut" }}
-                                className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-primary/80 rounded-full"
+                                className="absolute inset-y-0 left-0 bg-primary rounded-full"
                               />
                             </div>
                             <span className="text-xs font-bold text-white bg-white/10 px-2 py-1 rounded-full">{project.progress}%</span>
@@ -680,7 +676,7 @@ export default function Profile() {
             {/* Sidebar */}
             <div className="space-y-6">
               {/* Nível e Status */}
-              <Card className="border border-white/5 bg-white/[0.02] overflow-hidden backdrop-blur-sm">
+              <Card className="border-b border-white/10 bg-transparent">
                 <CardHeader className="border-b border-white/10 bg-white/5">
                   <CardTitle className="flex items-center gap-2 text-lg font-light text-white">
                     <Trophy className="h-5 w-5 text-primary" />
@@ -688,7 +684,7 @@ export default function Profile() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6 space-y-4">
-                  <div className="relative text-center p-8 rounded-xl bg-gradient-to-br from-primary/20 via-primary/10 to-primary/5 border border-primary/20 overflow-hidden">
+                  <div className="relative text-center p-8 border-b border-primary/20">
                     <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNSkiLz48L3N2Zz4=')] opacity-30" />
                     <div className="relative">
                       <div className="text-6xl font-bold text-primary mb-2 drop-shadow-lg">{level + 1}</div>
@@ -717,7 +713,7 @@ export default function Profile() {
               </Card>
 
               {/* Links */}
-              <Card className="border border-white/5 bg-white/[0.02] overflow-hidden backdrop-blur-sm">
+              <Card className="border-b border-white/10 bg-transparent">
                 <CardHeader className="border-b border-white/10 bg-white/5">
                   <CardTitle className="flex items-center gap-2 text-lg font-light text-white">
                     <Globe className="h-5 w-5 text-primary" />
@@ -777,7 +773,7 @@ export default function Profile() {
         {/* Competencies Tab */}
         <TabsContent value="competencies" className="space-y-6">
           {/* Manual Competencies Management */}
-          <Card className="border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] overflow-hidden">
+          <Card className="border-b border-white/10 bg-transparent">
             <CardHeader className="border-b border-white/10 bg-white/5">
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-xl font-light text-white">
@@ -924,7 +920,7 @@ export default function Profile() {
                             </div>
                             <div className="relative w-full bg-white/10 h-2 rounded-full overflow-hidden mb-2">
                               <div
-                                className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-primary/80 rounded-full"
+                                className="absolute inset-y-0 left-0 bg-primary rounded-full"
                                 style={{ width: `${comp.strength}%` }}
                               />
                             </div>
@@ -968,7 +964,7 @@ export default function Profile() {
         <TabsContent value="projects" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {activeProjects.length > 0 && (
-              <Card className="border border-white/5 bg-white/[0.02] overflow-hidden backdrop-blur-sm">
+              <Card className="border-b border-white/10 bg-transparent">
                 <CardHeader className="border-b border-white/10 bg-white/5">
                   <CardTitle className="flex items-center gap-2 text-lg font-light text-white">
                     <Rocket className="h-5 w-5 text-primary" />
@@ -995,7 +991,7 @@ export default function Profile() {
                               initial={{ width: 0 }}
                               animate={{ width: `${project.progress}%` }}
                               transition={{ delay: index * 0.1 + 0.2, duration: 0.8 }}
-                              className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-primary/80 rounded-full"
+                              className="absolute inset-y-0 left-0 bg-primary rounded-full"
                             />
                           </div>
                           <span className="text-xs font-bold text-white bg-white/10 px-2 py-1 rounded-full">{project.progress}%</span>
@@ -1008,7 +1004,7 @@ export default function Profile() {
             )}
 
             {completedProjects.length > 0 && (
-              <Card className="border border-white/5 bg-white/[0.02] overflow-hidden backdrop-blur-sm">
+              <Card className="border-b border-white/10 bg-transparent">
                 <CardHeader className="border-b border-white/10 bg-white/5">
                   <CardTitle className="flex items-center gap-2 text-lg font-light text-white">
                     <CheckCircle2 className="h-5 w-5 text-green-500" />
@@ -1022,9 +1018,8 @@ export default function Profile() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.1 }}
-                      className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 p-5 hover:border-green-500/30 transition-all duration-300 hover:shadow-lg hover:shadow-green-500/5"
+                      className="group relative border-b border-white/10 p-5 hover:border-primary transition-all duration-300"
                     >
-                      <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       <div className="relative">
                         <div className="flex items-start justify-between mb-2">
                           <h3 className="text-base font-semibold text-white group-hover:text-green-400 transition-colors">{project.title}</h3>
@@ -1063,7 +1058,7 @@ export default function Profile() {
           </div>
 
           {activeProjects.length === 0 && completedProjects.length === 0 && (
-            <Card className="border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02]">
+            <Card className="border-b border-white/10 bg-transparent">
               <CardContent className="text-center py-12">
                 <Code className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
                 <p className="text-muted-foreground">Nenhum projeto encontrado.</p>

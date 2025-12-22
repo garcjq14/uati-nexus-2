@@ -196,9 +196,6 @@ export function Sidebar({ isMobileOpen: externalIsMobileOpen, onMobileClose }: S
                       {isActive && (
                         <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#780606] shadow-[0_0_20px_rgba(120,6,6,0.8)] rounded-r-full" />
                       )}
-                      {isActive && (
-                         <div className="absolute inset-0 bg-gradient-to-r from-[#780606]/10 to-transparent opacity-100" />
-                      )}
                       <item.icon
                         className={cn(
                           'h-5 w-5 xs:h-5 xs:w-5 sm:h-5 sm:w-5 transition-colors z-10 flex-shrink-0',

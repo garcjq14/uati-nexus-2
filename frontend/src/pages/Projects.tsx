@@ -208,7 +208,7 @@ export default function Projects() {
   if (!loading && projects.length === 0) {
     return (
       <>
-        <div className="cv-section space-y-8 max-w-7xl mx-auto">
+        <div className="min-h-screen w-full space-y-8 px-4 py-8">
           <section className="rounded-3xl border border-white/10 bg-[#070708]/90 p-8">
             <div className="flex flex-col items-center justify-center text-center py-12">
               <div className="h-16 w-16 rounded-full bg-[#780606]/10 flex items-center justify-center mb-6">

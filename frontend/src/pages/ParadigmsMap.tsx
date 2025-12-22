@@ -79,6 +79,8 @@ export default function ParadigmsMap() {
   const fetchData = async () => {
     try {
       setLoading(true);
+      
+      // Buscar competências do paradigma
       const response = await api.get('/paradigms').catch((err: any) => {
         // Se for 401, deixar o interceptor lidar
         if (err?.response?.status === 401) {
@@ -88,10 +90,20 @@ export default function ParadigmsMap() {
         return { data: { competences: [], categories: [] } };
       });
       
+      // Buscar competências manuais do perfil
+      let manualCompetencies: any[] = [];
+      try {
+        const manualResponse = await api.get('/user/competencies');
+        manualCompetencies = manualResponse.data.competencies || [];
+      } catch (error) {
+        console.error('Failed to fetch manual competencies:', error);
+      }
+      
       const data = response?.data || {};
+      let paradigmCompetences: Competence[] = [];
       
       if (data.competences) {
-        setCompetences(Array.isArray(data.competences) ? data.competences : []);
+        paradigmCompetences = Array.isArray(data.competences) ? data.competences : [];
         setCategories(Array.isArray(data.categories) ? data.categories : []);
       } else if (data.paradigms || data.languages) {
         const fetchedParadigms = Array.isArray(data.paradigms) ? data.paradigms : [];
@@ -108,7 +120,7 @@ export default function ParadigmsMap() {
           color: categoryColors[idx % categoryColors.length],
         })));
         
-        setCompetences(fetchedLanguages.map((l: any, idx: number) => {
+        paradigmCompetences = fetchedLanguages.map((l: any, idx: number) => {
           // Converter porcentagem antiga para novo sistema de níveis (0-100 -> 1-12)
           const oldLevel = l?.proficiency || 0;
           const newLevel = oldLevel > 0 ? Math.max(1, Math.min(MAX_LEVEL, Math.ceil((oldLevel / 100) * MAX_LEVEL))) : 1;
@@ -122,9 +134,28 @@ export default function ParadigmsMap() {
           };
         }));
       } else {
-        setCompetences([]);
+        paradigmCompetences = [];
         setCategories([]);
       }
+      
+      // Converter competências manuais para o formato de Competence
+      // strength (0-100) -> currentLevel (1-12)
+      const manualCompetences: Competence[] = manualCompetencies.map((mc: any, idx: number) => {
+        const strength = mc.strength || 0;
+        const currentLevel = strength > 0 ? Math.max(1, Math.min(MAX_LEVEL, Math.ceil((strength / 100) * MAX_LEVEL))) : 1;
+        return {
+          id: `manual-${mc.id}`,
+          name: mc.name,
+          category: mc.description || 'Manual',
+          currentLevel: currentLevel,
+          goal: Math.max(currentLevel, 7), // Meta padrão: Intermediário 4
+          description: mc.description,
+        };
+      });
+      
+      // Mesclar competências do paradigma com competências manuais
+      const allCompetences = [...paradigmCompetences, ...manualCompetences];
+      setCompetences(allCompetences);
     } catch (err: any) {
       // Se for 401, não fazer nada (interceptor já redireciona)
       if (err?.response?.status === 401) {
@@ -438,7 +469,7 @@ export default function ParadigmsMap() {
   }
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto px-4 py-8">
+    <div className="min-h-screen w-full space-y-8 px-4 py-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>

@@ -397,7 +397,7 @@ export default function Achievements() {
         
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02]">
+          <Card className="border-b border-white/10 bg-transparent">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -408,7 +408,7 @@ export default function Achievements() {
               </div>
             </CardContent>
           </Card>
-          <Card className="border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02]">
+          <Card className="border-b border-white/10 bg-transparent">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -419,7 +419,7 @@ export default function Achievements() {
               </div>
             </CardContent>
           </Card>
-          <Card className="border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02]">
+          <Card className="border-b border-white/10 bg-transparent">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -432,7 +432,7 @@ export default function Achievements() {
               </div>
             </CardContent>
           </Card>
-          <Card className="border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02]">
+          <Card className="border-b border-white/10 bg-transparent">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -447,7 +447,7 @@ export default function Achievements() {
       </motion.div>
 
       {/* Filters */}
-      <Card className="border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02]">
+      <Card className="border-b border-white/10 bg-transparent">
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
@@ -618,13 +618,12 @@ const AchievementCard = ({ achievement, Icon, typeInfo, index, unlocked }: {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.03 }}
       className={cn(
-        "group relative overflow-hidden rounded-xl border transition-all duration-300",
+        "group relative border-b transition-all duration-300",
         unlocked
-          ? cn("bg-gradient-to-br", rarityGradients[achievement.rarity], "border-primary/30 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10")
-          : "bg-gradient-to-br from-white/5 to-white/[0.02] border-white/10 opacity-60 hover:opacity-80"
+          ? "border-primary/50 border-b"
+          : "border-white/10 border-b opacity-60 hover:opacity-80"
       )}
     >
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       <CardContent className="p-5 relative">
         <div className="flex items-start gap-4">
           <div className={cn(
