@@ -50,7 +50,6 @@ const NotesConnections = lazy(() => import('./pages/NotesConnections'));
 const ParadigmsMap = lazy(() => import('./pages/ParadigmsMap'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Profile = lazy(() => import('./pages/Profile'));
-const Achievements = lazy(() => import('./pages/Achievements'));
 const Documents = lazy(() => import('./pages/Documents'));
 const WeeklyPlanner = lazy(() => import('./pages/WeeklyPlanner'));
 const CoursesManagement = lazy(() => import('./pages/CoursesManagement'));
@@ -423,16 +422,6 @@ function App() {
                   <ProtectedRoute>
                     <SetupRequiredRoute>
                       <Profile />
-                    </SetupRequiredRoute>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/achievements"
-                element={
-                  <ProtectedRoute>
-                    <SetupRequiredRoute>
-                      <Achievements />
                     </SetupRequiredRoute>
                   </ProtectedRoute>
                 }

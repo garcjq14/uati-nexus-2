@@ -13,7 +13,6 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Trophy,
   Keyboard,
   X
 } from 'lucide-react';
@@ -51,7 +50,6 @@ const navigationGroups = [
     title: 'Pessoal',
     items: [
       { name: 'Perfil do Estudante', href: '/profile', icon: User },
-      { name: 'Conquistas', href: '/achievements', icon: Trophy },
       { name: 'Configurações', href: '/settings', icon: Settings },
       { name: 'Documentos Mestres', href: '/documents', icon: FileText },
     ],
@@ -69,7 +67,6 @@ const moduleLabels: Record<string, string> = {
   '/tools-hub': 'MOD. TOOLS',
   '/notes': 'MOD. ZETTELKASTEN',
   '/profile': 'MOD. PROFILE',
-  '/achievements': 'MOD. ACHIEVEMENTS',
   '/settings': 'MOD. SETTINGS',
   '/documents': 'MOD. DOCS',
 };
