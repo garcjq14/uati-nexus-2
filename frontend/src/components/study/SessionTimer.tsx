@@ -1,11 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Play, Pause, Square, Maximize2, Minimize2, X, Clock } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
 import { cn } from '../../lib/utils';
 import api from '../../lib/api';
 import { useToast } from '../feedback/ToastSystem';
+
+declare global {
+  interface WindowEventMap {
+    openSessionTimer: CustomEvent<void>;
+    setTimerPreset: CustomEvent<{ minutes: number }>;
+  }
+}
 
 interface SessionTimerProps {
   initialMinutes?: number;
@@ -14,6 +21,7 @@ interface SessionTimerProps {
 }
 
 export function SessionTimer({ initialMinutes = 25, onComplete, className }: SessionTimerProps) {
+  const [baseMinutes, setBaseMinutes] = useState(initialMinutes);
   const [minutes, setMinutes] = useState(initialMinutes);
   const [seconds, setSeconds] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
@@ -58,11 +66,33 @@ export function SessionTimer({ initialMinutes = 25, onComplete, className }: Ses
     return () => window.removeEventListener('openSessionTimer', handleOpenTimer);
   }, []);
 
+  useEffect(() => {
+    const handlePreset = (event: CustomEvent<{ minutes: number }>) => {
+      if (!event?.detail?.minutes) return;
+      setBaseMinutes(event.detail.minutes);
+      setMinutes(event.detail.minutes);
+      setSeconds(0);
+      setIsExpanded(true);
+      setIsRunning(false);
+    };
+
+    const presetListener = (event: Event) => handlePreset(event as CustomEvent<{ minutes: number }>);
+    window.addEventListener('setTimerPreset', presetListener);
+    return () => window.removeEventListener('setTimerPreset', presetListener);
+  }, []);
+
+  useEffect(() => {
+    setBaseMinutes(initialMinutes);
+    setMinutes(initialMinutes);
+    setSeconds(0);
+  }, [initialMinutes]);
+
   const handleStart = async () => {
     setIsRunning(true);
+    const sessionDuration = baseMinutes * 60;
     try {
       const response = await api.post('/timer/session', {
-        duration: initialMinutes * 60,
+        duration: sessionDuration,
         type: 'pomodoro',
       });
       setSessionId(response.data.id);
@@ -77,14 +107,15 @@ export function SessionTimer({ initialMinutes = 25, onComplete, className }: Ses
 
   const handleStop = () => {
     setIsRunning(false);
-    setMinutes(initialMinutes);
+    setMinutes(baseMinutes);
     setSeconds(0);
     setSessionId(null);
   };
 
   const handleComplete = async () => {
     setIsRunning(false);
-    const totalSeconds = (initialMinutes - minutes) * 60 + (60 - seconds);
+    const totalElapsed = baseMinutes * 60 - (minutes * 60 + seconds);
+    const totalSeconds = Math.max(0, totalElapsed);
     
     if (sessionId) {
       try {
@@ -106,7 +137,10 @@ export function SessionTimer({ initialMinutes = 25, onComplete, className }: Ses
     return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
   };
 
-  const progress = ((initialMinutes * 60 - (minutes * 60 + seconds)) / (initialMinutes * 60)) * 100;
+  const progressBase = Math.max(1, baseMinutes * 60);
+  const rawProgress =
+    ((progressBase - (minutes * 60 + seconds)) / progressBase) * 100;
+  const progress = Math.min(100, Math.max(0, rawProgress));
 
   if (isExpanded) {
     return (

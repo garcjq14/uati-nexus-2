@@ -3,7 +3,7 @@ import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Modal } from '../components/ui/modal';
 import { Input } from '../components/ui/input';
-import { Plus, Maximize2, ZoomIn, ZoomOut, Focus, Search, HelpCircle, Download, Edit, Trash2 } from 'lucide-react';
+import { Plus, Maximize2, ZoomIn, ZoomOut, Focus, Search, Download, Edit, Trash2, Map } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { ContextualHelp } from '../components/help/ContextualHelp';
 import { useToast } from '../components/feedback/ToastSystem';
@@ -49,7 +49,6 @@ function GraphContent() {
   const [nodeForConnection, setNodeForConnection] = useState<Node | null>(null); // Nó selecionado para conectar
   const [searchQuery, setSearchQuery] = useState('');
   const [deletingConnection, setDeletingConnection] = useState(false);
-  const [showLegend, setShowLegend] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showPresentationMode, setShowPresentationMode] = useState(false);
@@ -58,6 +57,7 @@ function GraphContent() {
   const [editNodeType, setEditNodeType] = useState('concept');
   const [updatingNode, setUpdatingNode] = useState(false);
   const [deletingNode, setDeletingNode] = useState(false);
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
   const { fitView, zoomIn, zoomOut, setCenter } = useReactFlow();
   const { success, error: showError } = useToast();
   const positionUpdateTimeoutRef = useRef<{ [key: string]: ReturnType<typeof setTimeout> }>({});
@@ -197,6 +197,7 @@ function GraphContent() {
 
       setNodes(flowNodes);
       setEdges(flowEdges);
+      setLastSyncedAt(new Date().toISOString());
     } catch (error) {
       console.error('Error fetching knowledge graph:', error);
       const axiosError = error as { 
@@ -211,6 +212,7 @@ function GraphContent() {
         setError('Erro ao carregar o grafo de conhecimento');
         setNodes([]);
         setEdges([]);
+        setLastSyncedAt(new Date().toISOString());
       }
     } finally {
       setLoading(false);
@@ -620,6 +622,15 @@ function GraphContent() {
     }
   };
 
+  const handleCenterGraph = () => {
+    if (nodes.length === 0) return;
+    try {
+      fitView({ padding: 0.2, duration: 400 });
+    } catch (error) {
+      console.warn('Não foi possível centralizar o grafo', error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -628,74 +639,198 @@ function GraphContent() {
     );
   }
 
-  return (
-    <div className="min-h-[calc(100vh-8rem)] flex flex-col gap-4 sm:gap-6 px-2 sm:px-0">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="min-w-0">
-            <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-primary mb-2">Mapa Mental</p>
-            <h1 className="text-2xl sm:text-3xl font-serif font-bold text-white truncate">Grafo de Conhecimento</h1>
-          </div>
-          <ContextualHelp section="knowledge" />
-        </div>
-        
-        <div className="flex gap-2 sm:gap-3 flex-wrap">
-          <div className="relative group flex-1 min-w-[200px] sm:min-w-[250px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-            <input
-              type="text"
-              placeholder="Buscar conceito..."
-              value={searchQuery}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
-              onKeyDown={handleSearch}
-              className="h-10 min-h-[44px] w-full rounded-lg border border-white/10 bg-white/[0.03] pl-10 pr-4 text-sm text-white placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none transition-all touch-manipulation"
-            />
-          </div>
-          <div className="relative flex-1 min-w-[200px] sm:min-w-[250px]">
-            <input
-              type="text"
-              placeholder="Novo nó..."
-              value={newNodeLabel}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewNodeLabel(e.target.value)}
-              onKeyPress={(e: React.KeyboardEvent<HTMLInputElement>) => {
-                if (e.key === 'Enter' && newNodeLabel.trim()) {
-                  handleAddNode();
-                }
-              }}
-              className="h-10 min-h-[44px] w-full rounded-lg border border-white/10 bg-white/[0.03] px-4 text-sm text-white placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none transition-colors touch-manipulation"
-            />
-          </div>
-          <Button
-            variant="default"
-            onClick={handleAddNode}
-            disabled={!newNodeLabel.trim() || saving}
-            className="bg-primary hover:bg-primary/90 text-white h-10 px-4 rounded-lg shadow-[0_0_20px_rgba(120,6,6,0.2)] touch-manipulation"
-            style={{ minHeight: '44px' }}
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => setShowPresentationMode(true)}
-            className="h-10 px-3 sm:px-4 rounded-lg touch-manipulation"
-            style={{ minHeight: '44px' }}
-          >
-            <Maximize2 className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">Apresentação</span>
-          </Button>
-          <Button
-            variant="outline"
-            onClick={handleExportGraph}
-            className="h-10 px-3 sm:px-4 rounded-lg touch-manipulation"
-            style={{ minHeight: '44px' }}
-          >
-            <Download className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">Exportar</span>
-          </Button>
-        </div>
-      </div>
+  const lastSyncLabel = lastSyncedAt
+    ? new Date(lastSyncedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+    : '---';
+  const selectedConnections = selectedNode
+    ? edges.filter(
+        (edge: Edge) => edge.source === selectedNode.id || edge.target === selectedNode.id
+      ).length
+    : 0;
+  const heroStats = [
+    { label: 'Nós mapeados', value: nodes.length },
+    { label: 'Conexões ativas', value: edges.length },
+    { label: 'Última sincronização', value: lastSyncLabel },
+    { label: 'Seleção ativa', value: selectedNode ? selectedNode.data.label : 'Nenhuma' },
+  ];
+  const legendItems = [
+    { label: 'Conceito', color: '#780606', shape: 'rounded-full' },
+    { label: 'Teoria', color: '#3b82f6', shape: 'rounded' },
+    { label: 'Prática', color: '#10b981', shape: 'rotate-45' },
+  ];
 
-      <Card className="flex-1 border border-white/5 bg-[#0d0d0d] overflow-hidden relative group shadow-2xl min-h-[calc(100vh-20rem)] sm:min-h-[calc(100vh-24rem)]">
+  return (
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8">
+      <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#210202] via-[#080101] to-[#040404] p-6 sm:p-8 shadow-[0_30px_90px_rgba(0,0,0,0.5)]">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-mono uppercase tracking-[0.35em] text-primary">Mapa mental</p>
+            <div className="flex items-center gap-2">
+              <h1 className="text-3xl font-serif font-light text-white">Grafo de conhecimento</h1>
+              <ContextualHelp section="knowledge" />
+            </div>
+            <p className="mt-2 text-sm text-white/70">
+              Visualize relações entre conceitos, conecte ideias e mantenha sua trilha de aprendizado atualizada.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Button variant="secondary" className="gap-2 text-white" onClick={() => setShowPresentationMode(true)}>
+              <Maximize2 className="h-4 w-4" />
+              Modo apresentação
+            </Button>
+            <Button variant="outline" className="gap-2 border-white/20 text-white/80 hover:text-white" onClick={handleExportGraph}>
+              <Download className="h-4 w-4" />
+              Exportar JSON
+            </Button>
+          </div>
+        </div>
+        <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+          {heroStats.map((item) => (
+            <div key={item.label} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <p className="text-xs uppercase tracking-wide text-white/60">{item.label}</p>
+              <p className="mt-2 text-2xl font-semibold text-white truncate">{item.value}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <div className="grid gap-6 xl:grid-cols-[320px,1fr]">
+        <div className="space-y-4">
+          <Card className="border-white/5 bg-white/[0.02] backdrop-blur">
+            <CardContent className="space-y-4 p-5">
+              <div className="space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-[0.35em] text-white/60">Buscar conceito</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
+                  <Input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={handleSearch}
+                    placeholder="Digite o nome do nó"
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-[0.35em] text-white/60">Criar novo nó</label>
+                <div className="flex gap-2">
+                  <Input
+                    value={newNodeLabel}
+                    onChange={(e) => setNewNodeLabel(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && newNodeLabel.trim()) {
+                        handleAddNode();
+                      }
+                    }}
+                    placeholder="Nome do conceito"
+                  />
+                  <Button onClick={handleAddNode} disabled={!newNodeLabel.trim() || saving} className="whitespace-nowrap">
+                    <Plus className="h-4 w-4" />
+                    Adicionar
+                  </Button>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="secondary" className="gap-2 text-white" onClick={handleCenterGraph} disabled={nodes.length === 0}>
+                  <Focus className="h-4 w-4" />
+                  Centralizar
+                </Button>
+                <Button variant="outline" className="gap-2 border-white/10" onClick={() => setShowPresentationMode(true)}>
+                  <Maximize2 className="h-4 w-4" />
+                  Apresentação
+                </Button>
+                <Button variant="outline" className="gap-2 border-white/10" onClick={handleExportGraph}>
+                  <Download className="h-4 w-4" />
+                  Exportar
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-white/5 bg-white/[0.02] backdrop-blur">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-white">
+                <Edit className="h-4 w-4 text-primary" />
+                Detalhes do nó
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {selectedNode ? (
+                <>
+                  <div>
+                    <p className="text-lg font-semibold text-white">{selectedNode.data.label}</p>
+                    <p className="text-xs uppercase tracking-[0.3em] text-primary">{selectedNode.data.type || 'concept'}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-sm text-white/70">
+                    <div className="rounded-lg border border-white/10 bg-white/5 p-3">
+                      <p className="text-xs uppercase text-white/50">Conexões</p>
+                      <p className="text-lg font-semibold text-white">{selectedConnections}</p>
+                    </div>
+                    <div className="rounded-lg border border-white/10 bg-white/5 p-3">
+                      <p className="text-xs uppercase text-white/50">Modo atual</p>
+                      <p className="text-lg font-semibold text-white">
+                        {nodeForConnection?.id === selectedNode.id ? 'Conectando' : 'Edição'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="sm" className="gap-2" onClick={handleEditNode}>
+                      <Edit className="h-3 w-3" />
+                      Editar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-2 border-red-500/40 text-red-300 hover:bg-red-500/10"
+                      onClick={handleDeleteNode}
+                      disabled={deletingNode}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      {deletingNode ? 'Removendo...' : 'Remover'}
+                    </Button>
+                    <Button size="sm" variant="ghost" className="text-white/70 hover:text-white" onClick={onPaneClick}>
+                      Limpar seleção
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-white/70">Selecione um nó no grafo para visualizar detalhes e ações rápidas.</p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="border-white/5 bg-white/[0.02] backdrop-blur">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-white">
+                <Map className="h-4 w-4 text-primary" />
+                Legenda e instruções
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                {legendItems.map((item) => (
+                  <div key={item.label} className="flex items-center gap-3">
+                    <div
+                      className={cn(
+                        'h-3 w-3',
+                        item.shape === 'rounded-full' ? 'rounded-full' : item.shape === 'rounded' ? 'rounded-sm' : 'rotate-45'
+                      )}
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <p className="text-sm text-white">{item.label}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="space-y-1 rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-white/70">
+                <p>• Clique em um nó para selecioná-lo.</p>
+                <p>• Clique duas vezes para editar.</p>
+                <p>• Clique em dois nós em sequência para criar conexões.</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card className="flex-1 border border-white/5 bg-[#0d0d0d] overflow-hidden relative group shadow-2xl min-h-[calc(100vh-20rem)] sm:min-h-[calc(100vh-24rem)]">
         <div className="absolute inset-0 bg-[radial-gradient(#ffffff03_1px,transparent_1px)] [background-size:16px_16px] opacity-30 pointer-events-none" />
         
         {error && (
@@ -752,47 +887,6 @@ function GraphContent() {
                className="bg-black/80 border border-white/10 rounded-lg"
             />
             
-            <Panel position="top-left" className="flex gap-2">
-               <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setShowLegend(!showLegend)}
-                  className={cn("bg-black/50 border-white/10 text-white hover:bg-white/10 h-10 w-10 p-0", showLegend && "bg-primary/20 border-primary/50")}
-               >
-                  <HelpCircle className="h-4 w-4" />
-               </Button>
-            </Panel>
-
-            {showLegend && (
-               <Panel position="top-left" className="mt-12 ml-0">
-                  <div className="bg-black/90 border border-white/10 p-4 rounded-xl backdrop-blur-md space-y-2 min-w-[200px]">
-                     <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Legenda</h4>
-                     <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-[#780606]" />
-                        <span className="text-xs text-white">Conceito</span>
-                     </div>
-                     <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-[#3b82f6] rounded-[2px]" />
-                        <span className="text-xs text-white">Teoria</span>
-                     </div>
-                     <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-[#10b981] rotate-45 rounded-none" />
-                        <span className="text-xs text-white">Prática</span>
-                     </div>
-                     <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/10">
-                        <div className="w-8 h-0.5 bg-[#6b7280] opacity-50" />
-                        <span className="text-xs text-white">Conexões</span>
-                     </div>
-                     <p className="text-xs text-muted-foreground mt-2 pt-2 border-t border-white/10">
-                        Clique em um nó e depois em outro para conectá-los
-                     </p>
-                     <p className="text-xs text-muted-foreground mt-2">
-                        Duplo clique em um nó para editá-lo
-                     </p>
-                  </div>
-               </Panel>
-            )}
-
             <Panel position="bottom-right" className="flex flex-col gap-2">
               <Button 
                 variant="outline" 
@@ -859,41 +953,11 @@ function GraphContent() {
               </Panel>
             )}
 
-            {selectedNode && !nodeForConnection && !selectedEdge && (
-              <Panel position="top-right" className="m-4">
-                <div className="w-64 p-6 rounded-xl bg-black/90 border border-primary/30 backdrop-blur-xl shadow-[0_0_40px_rgba(0,0,0,0.5)]">
-                  <h3 className="text-lg font-bold text-white mb-2">{selectedNode.data.label}</h3>
-                  <p className="text-xs font-mono uppercase tracking-wider text-primary mb-4">
-                    {selectedNode.data.type || 'Concept'}
-                  </p>
-                  <div className="space-y-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={handleEditNode}
-                      className="w-full justify-start text-xs border-white/10 hover:bg-white/5"
-                    >
-                      <Edit className="mr-2 h-3 w-3" />
-                      Editar Nó
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={handleDeleteNode}
-                      disabled={deletingNode}
-                      className="w-full justify-start text-xs border-white/10 hover:bg-white/5 text-red-400 hover:text-red-300 hover:border-red-400/30"
-                    >
-                      <Trash2 className="mr-2 h-3 w-3" />
-                      {deletingNode ? 'Removendo...' : 'Remover Nó'}
-                    </Button>
-                  </div>
-                </div>
-              </Panel>
-            )}
           </ReactFlow>
           )}
         </CardContent>
       </Card>
+    </div>
 
       {/* Edit Node Modal */}
       <Modal

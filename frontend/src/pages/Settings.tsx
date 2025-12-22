@@ -8,7 +8,6 @@ import { Settings as SettingsIcon, Moon, Sun, Globe, Bell, Eye, FileText, Type, 
 import { useTheme } from '../contexts/ThemeContext';
 import { useUser } from '../contexts/UserContext';
 import { useCourse } from '../contexts/CourseContext';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { useToast } from '../components/feedback/ToastSystem';
 import { cn } from '../lib/utils';
 import api from '../lib/api';
@@ -44,6 +43,35 @@ const FAQ_ITEMS = [
     answer: 'O Zettelkasten é um método de tomada de notas que enfatiza conexões entre ideias. Cada nota pode ser conectada a outras, criando uma rede de conhecimento interligada.',
   },
 ];
+
+const NAV_SECTIONS = [
+  {
+    id: 'general',
+    label: 'Geral',
+    description: 'Idioma, notificações e comportamento',
+    icon: SettingsIcon,
+  },
+  {
+    id: 'account',
+    label: 'Conta',
+    description: 'Dados pessoais e cursos',
+    icon: User,
+  },
+  {
+    id: 'appearance',
+    label: 'Aparência',
+    description: 'Densidade e tipografia',
+    icon: Palette,
+  },
+  {
+    id: 'help',
+    label: 'Ajuda',
+    description: 'FAQ e exclusões',
+    icon: FileText,
+  },
+] as const;
+
+type SectionKey = (typeof NAV_SECTIONS)[number]['id'];
 
 export default function Settings() {
   const { theme } = useTheme();
@@ -95,6 +123,7 @@ export default function Settings() {
   const [deletingCourse, setDeletingCourse] = useState(false);
   const [courseDeleteConfirm, setCourseDeleteConfirm] = useState<Record<string, string>>({});
   const [deletingCourseId, setDeletingCourseId] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState<SectionKey>('general');
 
   const handleDeleteCourse = async () => {
     if (!currentCourse) {
@@ -296,154 +325,209 @@ export default function Settings() {
   };
 
   return (
-    <div className="space-y-6 sm:space-y-8 max-w-5xl mx-auto">
-      <div>
-        <p className="text-[9px] sm:text-[10px] font-mono uppercase tracking-[0.3em] sm:tracking-[0.4em] text-primary mb-2">Preferências</p>
-        <h1 className="text-2xl sm:text-3xl font-serif font-light text-white tracking-tight">Configurações</h1>
-      </div>
+    <div className="mx-auto space-y-8 px-4 py-8 sm:space-y-10 max-w-6xl">
+      <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#120505] via-[#050202] to-[#050505] p-6 sm:p-8 shadow-[0_30px_80px_rgba(0,0,0,0.35)]">
+        <div className="flex flex-wrap items-center justify-between gap-6">
+          <div>
+            <p className="text-[10px] font-mono uppercase tracking-[0.35em] text-primary">Preferências</p>
+            <h1 className="text-3xl font-serif font-light text-white">Configurações do Nexus</h1>
+            <p className="mt-2 text-sm text-white/70">
+              Ajuste notificações, aparência e dados da sua conta em um único painel.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Button variant="secondary" className="gap-2 text-white" onClick={handleExportSettings}>
+              <Download className="h-4 w-4" />
+              Exportar
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-2 border-white/20 text-red-300 hover:border-red-400 hover:text-red-200"
+              onClick={handleResetSettings}
+            >
+              <Trash2 className="h-4 w-4" />
+              Resetar
+            </Button>
+          </div>
+        </div>
 
-      <Tabs defaultValue="general" className="space-y-4 sm:space-y-6">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
-          <TabsTrigger value="general" className="gap-1 sm:gap-2 py-2 sm:py-3 px-2 sm:px-4">
-            <SettingsIcon className="h-4 w-4" />
-            <span className="hidden sm:inline">Geral</span>
-          </TabsTrigger>
-          <TabsTrigger value="account" className="gap-1 sm:gap-2 py-2 sm:py-3 px-2 sm:px-4">
-            <User className="h-4 w-4" />
-            <span className="hidden sm:inline">Conta</span>
-          </TabsTrigger>
-          <TabsTrigger value="appearance" className="gap-1 sm:gap-2 py-2 sm:py-3 px-2 sm:px-4">
-            <Palette className="h-4 w-4" />
-            <span className="hidden sm:inline">Aparência</span>
-          </TabsTrigger>
-          <TabsTrigger value="help" className="gap-1 sm:gap-2 py-2 sm:py-3 px-2 sm:px-4">
-            <FileText className="h-4 w-4" />
-            <span className="hidden sm:inline">Ajuda</span>
-          </TabsTrigger>
-        </TabsList>
+        <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <p className="text-xs uppercase tracking-wide text-white/60">Idioma</p>
+            <p className="mt-2 text-xl font-semibold text-white">{language === 'pt' ? 'Português' : 'English'}</p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <p className="text-xs uppercase tracking-wide text-white/60">Auto save</p>
+            <p className="mt-2 text-xl font-semibold text-white">{autoSave ? 'Ativo' : 'Inativo'}</p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <p className="text-xs uppercase tracking-wide text-white/60">Notificações</p>
+            <p className="mt-2 text-xl font-semibold text-white">
+              {Object.values(notifications).filter(Boolean).length}/3
+            </p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <p className="text-xs uppercase tracking-wide text-white/60">Tema</p>
+            <p className="mt-2 text-xl font-semibold text-white">{theme === 'dark' ? 'Modo escuro' : 'Modo claro'}</p>
+          </div>
+        </div>
+      </section>
 
-        {/* General Settings */}
-        <TabsContent value="general" className="space-y-6">
-          <Card className="border-white/5 bg-white/[0.02] backdrop-blur-sm">
-            <CardHeader className="border-b border-white/5">
-              <div className="flex items-center gap-2">
-                <SettingsIcon className="h-5 w-5 text-primary" />
-                <CardTitle>Configurações Gerais</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6 pt-6">
-              {/* Language */}
-              <div>
-                <label className="mb-2 flex items-center gap-2 text-sm font-medium text-white">
-                  <Globe className="h-4 w-4" />
-                  Idioma
-                </label>
-                <select
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary"
-                  aria-label="Selecione o idioma"
-                >
-                  <option value="pt">Português</option>
-                  <option value="en">English</option>
-                </select>
-              </div>
-
-              {/* Notifications */}
-              <div className="space-y-4">
-                <label className="mb-2 flex items-center gap-2 text-sm font-medium text-white">
-                  <Bell className="h-4 w-4" />
-                  Notificações
-                </label>
-                <div className="space-y-4 rounded-lg border border-white/5 bg-white/[0.02] p-4">
-                  <Switch
-                    checked={notifications.push}
-                    onCheckedChange={(checked) =>
-                      setNotifications({ ...notifications, push: checked })
-                    }
-                    label="Notificações Push"
-                    description="Receba notificações no navegador"
-                  />
-                  <Switch
-                    checked={notifications.email}
-                    onCheckedChange={(checked) =>
-                      setNotifications({ ...notifications, email: checked })
-                    }
-                    label="Notificações por Email"
-                    description="Receba atualizações importantes por email"
-                  />
-                  <Switch
-                    checked={notifications.sound}
-                    onCheckedChange={(checked) =>
-                      setNotifications({ ...notifications, sound: checked })
-                    }
-                    label="Sons de Notificação"
-                    description="Reproduzir sons ao receber notificações"
-                  />
+      <div className="grid gap-6 lg:grid-cols-[260px,1fr]">
+        <nav className="space-y-3 rounded-2xl border border-white/5 bg-white/[0.02] p-4">
+          {NAV_SECTIONS.map((section) => {
+            const Icon = section.icon;
+            const isActive = activeSection === section.id;
+            return (
+              <button
+                key={section.id}
+                onClick={() => setActiveSection(section.id)}
+                className={cn(
+                  'w-full rounded-2xl border px-4 py-3 text-left transition-all',
+                  isActive
+                    ? 'border-primary/50 bg-primary/10 text-white shadow-lg shadow-primary/10'
+                    : 'border-white/10 bg-white/5 text-white/70 hover:border-white/30 hover:text-white'
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={cn('rounded-full p-2', isActive ? 'bg-primary/20' : 'bg-white/5')}>
+                    <Icon className={cn('h-4 w-4', isActive ? 'text-primary' : 'text-white/60')} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">{section.label}</p>
+                    <p className="text-xs text-white/60">{section.description}</p>
+                  </div>
                 </div>
-              </div>
+              </button>
+            );
+          })}
+        </nav>
 
-              {/* Performance & Behavior */}
-              <div className="space-y-4">
-                <label className="mb-2 flex items-center gap-2 text-sm font-medium text-white">
-                  <Zap className="h-4 w-4" />
-                  Desempenho e Comportamento
-                </label>
-                <div className="space-y-4 rounded-lg border border-white/5 bg-white/[0.02] p-4">
-                  <Switch
-                    checked={animationsEnabled}
-                    onCheckedChange={setAnimationsEnabled}
-                    label="Animações"
-                    description="Ativar animações e transições suaves"
-                  />
-                  <Switch
-                    checked={autoSave}
-                    onCheckedChange={setAutoSave}
-                    label="Salvamento Automático"
-                    description="Salvar alterações automaticamente"
-                  />
+        <div className="space-y-6">
+          {activeSection === 'general' && (
+            <Card className="border-white/5 bg-white/[0.02] backdrop-blur">
+              <CardHeader className="border-b border-white/5">
+                <div className="flex items-center gap-2">
+                  <SettingsIcon className="h-5 w-5 text-primary" />
+                  <CardTitle>Configurações Gerais</CardTitle>
                 </div>
-              </div>
+              </CardHeader>
+              <CardContent className="space-y-6 pt-6">
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div>
+                    <label className="mb-2 flex items-center gap-2 text-sm font-medium text-white">
+                      <Globe className="h-4 w-4" />
+                      Idioma
+                    </label>
+                    <select
+                      value={language}
+                      onChange={(e) => setLanguage(e.target.value)}
+                      className="w-full rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-sm text-white focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    >
+                      <option value="pt">Português</option>
+                      <option value="en">English</option>
+                    </select>
+                  </div>
+                  <div className="space-y-3 rounded-2xl border border-white/5 bg-white/[0.03] p-4">
+                    <p className="text-xs uppercase tracking-wide text-white/60">Estado da conta</p>
+                    <p className="text-sm text-white/70">
+                      {user?.email ? `Logado como ${user.email}` : 'Você ainda não informou um email.'}
+                    </p>
+                  </div>
+                </div>
 
-              {/* Data Management */}
-              <div className="space-y-4">
-                <label className="mb-2 flex items-center gap-2 text-sm font-medium text-white">
-                  <Download className="h-4 w-4" />
-                  Gerenciamento de Dados
-                </label>
-                <div className="flex gap-3">
-                  <Button
-                    variant="outline"
-                    onClick={handleExportSettings}
-                    className="flex-1 gap-2"
-                  >
+                <div className="space-y-4">
+                  <label className="mb-2 flex items-center gap-2 text-sm font-medium text-white">
+                    <Bell className="h-4 w-4" />
+                    Notificações
+                  </label>
+                  <div className="space-y-4 rounded-lg border border-white/5 bg-white/[0.02] p-4">
+                    <Switch
+                      checked={notifications.push}
+                      onCheckedChange={(checked) =>
+                        setNotifications({ ...notifications, push: checked })
+                      }
+                      label="Notificações Push"
+                      description="Receba notificações no navegador"
+                    />
+                    <Switch
+                      checked={notifications.email}
+                      onCheckedChange={(checked) =>
+                        setNotifications({ ...notifications, email: checked })
+                      }
+                      label="Notificações por Email"
+                      description="Receba atualizações importantes por email"
+                    />
+                    <Switch
+                      checked={notifications.sound}
+                      onCheckedChange={(checked) =>
+                        setNotifications({ ...notifications, sound: checked })
+                      }
+                      label="Sons de Notificação"
+                      description="Reproduzir sons ao receber notificações"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <label className="mb-2 flex items-center gap-2 text-sm font-medium text-white">
+                    <Zap className="h-4 w-4" />
+                    Desempenho e comportamento
+                  </label>
+                  <div className="space-y-4 rounded-lg border border-white/5 bg-white/[0.02] p-4">
+                    <Switch
+                      checked={animationsEnabled}
+                      onCheckedChange={setAnimationsEnabled}
+                      label="Animações"
+                      description="Ativar animações e transições suaves"
+                    />
+                    <Switch
+                      checked={autoSave}
+                      onCheckedChange={setAutoSave}
+                      label="Salvamento Automático"
+                      description="Salvar alterações automaticamente"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <label className="mb-2 flex items-center gap-2 text-sm font-medium text-white">
                     <Download className="h-4 w-4" />
-                    Exportar Configurações
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={handleResetSettings}
-                    className="flex-1 gap-2 text-red-400 hover:text-red-300 hover:border-red-500/50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Resetar Tudo
-                  </Button>
+                    Gerenciamento de dados
+                  </label>
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <Button
+                      variant="outline"
+                      onClick={handleExportSettings}
+                      className="flex-1 gap-2"
+                    >
+                      <Download className="h-4 w-4" />
+                      Exportar Configurações
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleResetSettings}
+                      className="flex-1 gap-2 text-red-400 hover:text-red-300 hover:border-red-500/50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Resetar Tudo
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+              </CardContent>
+            </Card>
+          )}
 
-        {/* Account Settings */}
-        <TabsContent value="account" className="space-y-6">
-          <Card className="border-white/5 bg-white/[0.02] backdrop-blur-sm">
-            <CardHeader className="border-b border-white/5">
-              <div className="flex items-center gap-2">
-                <User className="h-5 w-5 text-primary" />
-                <CardTitle>Configurações de Conta</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6 pt-6">
+          {activeSection === 'account' && (
+            <>
+              <Card className="border-white/5 bg-white/[0.02] backdrop-blur">
+                <CardHeader className="border-b border-white/5">
+                  <div className="flex items-center gap-2">
+                    <User className="h-5 w-5 text-primary" />
+                    <CardTitle>Configurações de Conta</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-6 pt-6">
               {/* Name */}
               <div className="rounded-lg border border-white/5 bg-white/[0.02] p-4 space-y-4">
                 <div className="flex items-center gap-2">
@@ -741,11 +825,11 @@ export default function Settings() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
+            </>
+          )}
 
-        {/* Appearance Settings */}
-        <TabsContent value="appearance" className="space-y-6">
-          <Card className="border-white/5 bg-white/[0.02] backdrop-blur-sm">
+        {activeSection === 'appearance' && (
+          <Card className="border-white/5 bg-white/[0.02] backdrop-blur">
             <CardHeader className="border-b border-white/5">
               <div className="flex items-center gap-2">
                 <Palette className="h-5 w-5 text-primary" />
@@ -753,27 +837,24 @@ export default function Settings() {
               </div>
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
-              {/* Theme Info */}
               <div>
                 <label className="mb-3 flex items-center gap-2 text-sm font-medium text-white">
                   <Moon className="h-4 w-4" />
                   Tema
                 </label>
-                <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-white/10 bg-white/[0.02]">
+                <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.02] px-4 py-3">
                   <Moon className="h-5 w-5 text-primary" />
                   <span className="font-medium text-foreground">Modo Escuro</span>
                   <span className="ml-auto text-xs text-muted-foreground">Sempre ativo</span>
                 </div>
               </div>
 
-              {/* Display Preferences */}
               <div className="space-y-4">
                 <label className="mb-2 flex items-center gap-2 text-sm font-medium text-white">
                   <Eye className="h-4 w-4" />
                   Preferências de Exibição
                 </label>
-                
-                {/* Density */}
+
                 <div>
                   <label className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
                     <Layout className="h-3 w-3" />
@@ -785,10 +866,10 @@ export default function Settings() {
                         key={density}
                         onClick={() => setDisplayPrefs({ ...displayPrefs, density })}
                         className={cn(
-                          "px-4 py-2 rounded-lg border text-xs transition-all capitalize flex-1",
+                          'flex-1 rounded-lg border px-4 py-2 text-xs capitalize transition-all',
                           displayPrefs.density === density
-                            ? "bg-primary text-white border-primary shadow-lg shadow-primary/20"
-                            : "border-white/10 bg-white/[0.02] text-muted-foreground hover:bg-white/5 hover:text-white"
+                            ? 'border-primary bg-primary text-white shadow-lg shadow-primary/20'
+                            : 'border-white/10 bg-white/[0.02] text-muted-foreground hover:bg-white/5 hover:text-white'
                         )}
                       >
                         {density === 'compact' ? 'Compacta' : density === 'comfortable' ? 'Confortável' : 'Espaçosa'}
@@ -797,7 +878,6 @@ export default function Settings() {
                   </div>
                 </div>
 
-                {/* Font Size */}
                 <div>
                   <label className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
                     <Type className="h-3 w-3" />
@@ -809,10 +889,10 @@ export default function Settings() {
                         key={size}
                         onClick={() => setDisplayPrefs({ ...displayPrefs, fontSize: size })}
                         className={cn(
-                          "px-4 py-2 rounded-lg border text-xs transition-all capitalize flex-1",
+                          'flex-1 rounded-lg border px-4 py-2 text-xs capitalize transition-all',
                           displayPrefs.fontSize === size
-                            ? "bg-primary text-white border-primary shadow-lg shadow-primary/20"
-                            : "border-white/10 bg-white/[0.02] text-muted-foreground hover:bg-white/5 hover:text-white"
+                            ? 'border-primary bg-primary text-white shadow-lg shadow-primary/20'
+                            : 'border-white/10 bg-white/[0.02] text-muted-foreground hover:bg-white/5 hover:text-white'
                         )}
                       >
                         {size === 'small' ? 'Pequeno' : size === 'medium' ? 'Médio' : 'Grande'}
@@ -823,21 +903,20 @@ export default function Settings() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        )}
 
         {/* Help */}
-        <TabsContent value="help" className="space-y-6">
-          <Card>
-            <CardHeader>
+        {activeSection === 'help' && (
+          <Card className="border-white/5 bg-white/[0.02] backdrop-blur">
+            <CardHeader className="border-b border-white/5">
               <div className="flex items-center gap-2">
                 <FileText className="h-5 w-5 text-primary" />
                 <CardTitle>Ajuda e Suporte</CardTitle>
               </div>
             </CardHeader>
-            <CardContent className="space-y-6">
-              {/* FAQ */}
+            <CardContent className="space-y-6 pt-6">
               <div>
-                <h3 className="mb-4 font-semibold text-white flex items-center gap-2">
+                <h3 className="mb-4 flex items-center gap-2 font-semibold text-white">
                   <FileText className="h-4 w-4" />
                   Perguntas Frequentes
                 </h3>
@@ -845,13 +924,13 @@ export default function Settings() {
                   {FAQ_ITEMS.map((item, index) => (
                     <div
                       key={index}
-                      className="rounded-lg border border-border/30 bg-background/30 overflow-hidden transition-all hover:border-border/50"
+                      className="overflow-hidden rounded-lg border border-border/30 bg-background/30 transition-all hover:border-border/50"
                     >
                       <button
                         onClick={() => setExpandedFAQ(expandedFAQ === index ? null : index)}
-                        className="w-full flex items-center justify-between p-4 text-left hover:bg-background/50 transition-colors"
+                        className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-background/50"
                       >
-                        <span className="text-sm font-medium text-white pr-4">{item.question}</span>
+                        <span className="pr-4 text-sm font-medium text-white">{item.question}</span>
                         {expandedFAQ === index ? (
                           <ChevronUp className="h-4 w-4 text-primary flex-shrink-0" />
                         ) : (
@@ -859,7 +938,7 @@ export default function Settings() {
                         )}
                       </button>
                       {expandedFAQ === index && (
-                        <div className="px-4 pb-4 border-t border-border/30 pt-4">
+                        <div className="border-t border-border/30 px-4 pb-4 pt-4">
                           <p className="text-sm text-muted-foreground leading-relaxed">{item.answer}</p>
                         </div>
                       )}
@@ -868,14 +947,12 @@ export default function Settings() {
                 </div>
               </div>
 
-              {/* Formulário de contato removido conforme solicitado */}
-
               <div className="rounded-lg border border-border/30 bg-background/30 p-4">
-                <h3 className="mb-2 font-semibold text-white flex items-center gap-2">
+                <h3 className="mb-2 flex items-center gap-2 font-semibold text-white">
                   <FileText className="h-4 w-4" />
                   Documentação
                 </h3>
-                <p className="text-sm text-muted-foreground mb-4">
+                <p className="mb-4 text-sm text-muted-foreground">
                   Acesse os documentos mestres para mais informações sobre o sistema.
                 </p>
                 <Button variant="outline" asChild className="gap-2">
@@ -887,14 +964,14 @@ export default function Settings() {
               </div>
 
               <div className="rounded-lg border border-red-900/40 bg-red-900/10 p-4">
-                <h3 className="mb-3 font-semibold text-white flex items-center gap-2">
+                <h3 className="mb-3 flex items-center gap-2 font-semibold text-white">
                   <Trash2 className="h-4 w-4 text-red-400" />
                   Excluir curso
                 </h3>
-                <p className="text-sm text-muted-foreground mb-3">
+                <p className="mb-3 text-sm text-muted-foreground">
                   Esta ação remove o curso atual e seus dados associados. Digite <span className="text-white font-semibold">excluir</span> para confirmar.
                 </p>
-                <div className="flex flex-wrap gap-2 items-center">
+                <div className="flex flex-wrap items-center gap-2">
                   <Input
                     value={deleteConfirm}
                     onChange={(e) => setDeleteConfirm(e.target.value)}
@@ -914,8 +991,8 @@ export default function Settings() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+        )}
+      </div>
     </div>
   );
 }
