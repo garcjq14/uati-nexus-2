@@ -1,7 +1,7 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { ArrowLeft, Edit, Tag, Link as LinkIcon, X } from 'lucide-react';
+import { ArrowLeft, Edit } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import api from '../lib/api';
 
@@ -9,7 +9,6 @@ export default function NoteDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [note, setNote] = useState<any>(null);
-  const [connectedNotes, setConnectedNotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,17 +20,14 @@ export default function NoteDetail() {
   const fetchNote = async () => {
     try {
       const response = await api.get(`/notes/${id}`);
-      // Normalize tags, connections, and references to always be arrays
+      // Normalize references to always be arrays
       const normalizedNote = {
         ...response.data,
-        tags: Array.isArray(response.data.tags) ? response.data.tags : response.data.tags ? [response.data.tags] : [],
-        connections: Array.isArray(response.data.connections) ? response.data.connections : response.data.connections ? [response.data.connections] : [],
+        title: response.data.title || '',
+        content: response.data.content || '',
         references: Array.isArray(response.data.references) ? response.data.references : response.data.references ? [response.data.references] : []
       };
       setNote(normalizedNote);
-      if (normalizedNote.connectedNotes) {
-        setConnectedNotes(Array.isArray(normalizedNote.connectedNotes) ? normalizedNote.connectedNotes : []);
-      }
     } catch (error) {
       console.error('Failed to fetch note:', error);
     } finally {
@@ -39,26 +35,6 @@ export default function NoteDetail() {
     }
   };
 
-  const removeTag = async (tagToRemove: string) => {
-    if (!note || !id) return;
-    
-    try {
-      const updatedTags = Array.isArray(note.tags) 
-        ? note.tags.filter((tag: string) => tag !== tagToRemove)
-        : [];
-      
-      const updatedNote = {
-        ...note,
-        tags: updatedTags
-      };
-      
-      await api.put(`/notes/${id}`, updatedNote);
-      setNote(updatedNote);
-    } catch (error) {
-      console.error('Failed to remove tag:', error);
-      alert('Erro ao remover tag');
-    }
-  };
 
   if (loading || !note) {
     return <div className="text-center text-muted-foreground">Carregando...</div>;
@@ -97,66 +73,6 @@ export default function NoteDetail() {
           </div>
         </CardContent>
       </Card>
-
-      {/* Tags */}
-      {Array.isArray(note.tags) && note.tags.length > 0 && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Tag className="h-5 w-5 text-primary" />
-              <CardTitle>Tags</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {note.tags.map((tag: string, idx: number) => (
-                <div
-                  key={idx}
-                  className="flex items-center gap-2 rounded-full bg-primary/20 px-3 py-1 text-sm text-primary"
-                >
-                  {tag}
-                  <button
-                    onClick={() => removeTag(tag)}
-                    className="hover:text-primary/70"
-                    aria-label={`Remover tag ${tag}`}
-                    title={`Remover tag ${tag}`}
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Connections */}
-      {connectedNotes.length > 0 && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <LinkIcon className="h-5 w-5 text-primary" />
-              <CardTitle>Conexões</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {connectedNotes.map((connectedNote) => (
-                <Link
-                  key={connectedNote.id}
-                  to={`/notes/${connectedNote.id}`}
-                  className="block rounded-lg border border-border p-3 transition-colors hover:border-primary hover:bg-secondary"
-                >
-                  <h3 className="font-semibold">{connectedNote.title}</h3>
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {connectedNote.content}
-                  </p>
-                </Link>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* References */}
       {Array.isArray(note.references) && note.references.length > 0 && (

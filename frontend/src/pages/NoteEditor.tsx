@@ -28,10 +28,7 @@ export default function NoteEditor() {
     tags: [],
     references: [],
   });
-  const [tagInput, setTagInput] = useState('');
   const [referenceInput, setReferenceInput] = useState('');
-  const [connectionInput, setConnectionInput] = useState('');
-  const [availableNotes, setAvailableNotes] = useState<Note[]>([]);
   const [showPreview, setShowPreview] = useState(false);
   const [loading, setLoading] = useState(!isNew);
 
@@ -39,12 +36,14 @@ export default function NoteEditor() {
     if (!id) return;
     try {
       const response = await api.get<Note>(`/notes/${id}`);
-      // Normalize tags to always be arrays
+      // Normalize references to always be arrays
       const normalizedNote = {
         ...response.data,
-        tags: Array.isArray(response.data.tags) ? response.data.tags : response.data.tags ? [response.data.tags] : [],
-        connections: Array.isArray(response.data.connections) ? response.data.connections : response.data.connections ? [response.data.connections] : [],
-        references: Array.isArray(response.data.references) ? response.data.references : response.data.references ? [response.data.references] : []
+        title: response.data.title || '',
+        content: response.data.content || '',
+        references: Array.isArray(response.data.references) ? response.data.references : response.data.references ? [response.data.references] : [],
+        tags: [],
+        connections: []
       };
       setNote(normalizedNote);
     } catch (error) {
@@ -54,36 +53,11 @@ export default function NoteEditor() {
     }
   }, [id]);
 
-  const fetchAvailableNotes = useCallback(async () => {
-    try {
-      const response = await api.get<Note[]>('/notes');
-      setAvailableNotes(response.data.filter((n) => n.id !== id));
-    } catch (error) {
-      console.error('Failed to fetch available notes:', error);
-    }
-  }, [id]);
-
   useEffect(() => {
     if (!isNew && id) {
       fetchNote();
     }
-    fetchAvailableNotes();
-  }, [id, isNew, fetchNote, fetchAvailableNotes]);
-
-  const addTag = () => {
-    const tagsArray = Array.isArray(note.tags) ? note.tags : [];
-    const cleanTag = tagInput.trim().toLowerCase();
-    if (cleanTag && !tagsArray.map((t) => t.toLowerCase()).includes(cleanTag)) {
-      setNote({ ...note, tags: [...tagsArray, cleanTag] });
-      setTagInput('');
-    }
-  };
-
-  const removeTag = (tag: string) => {
-    const tagsArray = Array.isArray(note.tags) ? note.tags : [];
-    setNote({ ...note, tags: tagsArray.filter((t) => t !== tag) });
-    setTagInput('');
-  };
+  }, [id, isNew, fetchNote]);
 
   const addReference = () => {
     if (referenceInput.trim() && !note.references.includes(referenceInput.trim())) {
@@ -96,16 +70,6 @@ export default function NoteEditor() {
     setNote({ ...note, references: note.references.filter((r) => r !== ref) });
   };
 
-  const addConnection = () => {
-    if (connectionInput && !note.connections.includes(connectionInput)) {
-      setNote({ ...note, connections: [...note.connections, connectionInput] });
-      setConnectionInput('');
-    }
-  };
-
-  const removeConnection = (connId: string) => {
-    setNote({ ...note, connections: note.connections.filter((c) => c !== connId) });
-  };
 
   const handleSave = async () => {
     if (!note.title || !note.content) {
@@ -114,8 +78,11 @@ export default function NoteEditor() {
     }
 
     try {
-      const cleanTags = Array.from(new Set((note.tags || []).map((t) => t.trim()).filter(Boolean)));
-      const payload = { ...note, tags: cleanTags };
+      const payload = { 
+        title: note.title,
+        content: note.content,
+        references: note.references || []
+      };
       if (isNew) {
         await api.post('/notes', payload);
         
@@ -210,52 +177,6 @@ export default function NoteEditor() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Conexões</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-2">
-                <select
-                  value={connectionInput}
-                  onChange={(e) => setConnectionInput(e.target.value)}
-                  className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                  aria-label="Selecione uma ficha para conectar"
-                  title="Selecione uma ficha para conectar"
-                >
-                  <option value="">Selecione uma ficha...</option>
-                  {availableNotes.map((n) => (
-                    <option key={n.id} value={n.id}>
-                      {n.title}
-                    </option>
-                  ))}
-                </select>
-                <Button onClick={addConnection}>Adicionar</Button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {note.connections.map((connId) => {
-                  const connectedNote = availableNotes.find((n) => n.id === connId);
-                  return (
-                    <div
-                      key={connId}
-                      className="flex items-center gap-2 rounded-full bg-primary/20 px-3 py-1 text-sm text-primary"
-                    >
-                      {connectedNote?.title || connId}
-                      <button
-                        onClick={() => removeConnection(connId)}
-                        className="hover:text-primary/70"
-                        aria-label={`Remover conexão com ${connectedNote?.title || connId}`}
-                        title={`Remover conexão com ${connectedNote?.title || connId}`}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
               <CardTitle>Referências</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -292,41 +213,6 @@ export default function NoteEditor() {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Tags</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-2">
-                <Input
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } }}
-                  placeholder="Nova tag..."
-                />
-                <Button onClick={addTag}>Adicionar</Button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {Array.isArray(note.tags) && note.tags.map((tag) => (
-                  <div
-                    key={tag}
-                    className="flex items-center gap-2 rounded-full bg-primary/20 px-3 py-1 text-sm text-primary"
-                  >
-                    {tag}
-                    <button
-                      onClick={() => removeTag(tag)}
-                      className="hover:text-primary/70"
-                      aria-label={`Remover tag ${tag}`}
-                      title={`Remover tag ${tag}`}
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
           <Button variant="default" className="w-full" onClick={handleSave}>
             <Save className="mr-2 h-4 w-4" />
             Salvar Ficha
