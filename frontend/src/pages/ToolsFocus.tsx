@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Skeleton } from '../components/ui/skeleton';
+import { Modal } from '../components/ui/modal';
 import {
   Activity,
   ArrowRight,
@@ -14,6 +15,8 @@ import {
   Play,
   RotateCcw,
   Target,
+  Settings,
+  X,
 } from 'lucide-react';
 import api from '../lib/api';
 
@@ -60,6 +63,7 @@ const focusLinks = [
 export default function ToolsFocus() {
   const [sessions, setSessions] = useState<TimerSession[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showConfig, setShowConfig] = useState(false);
   const [workMinutes, setWorkMinutes] = useState(() => {
     const saved = localStorage.getItem('pomodoro_work_minutes');
     return saved ? parseInt(saved) : 25;
@@ -202,120 +206,154 @@ export default function ToolsFocus() {
   const highlightSession = recentSessions[0];
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8">
-      <section className="border border-white/10 bg-transparent p-6 sm:p-8">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-primary">Tools & Focus</p>
-            <h1 className="text-3xl font-serif font-light text-white">Central de Pomodoro</h1>
-            <p className="mt-2 text-sm text-white/70">
-              Configure tempos de trabalho, descanso curto e descanso longo. Acompanhe minutos investidos e acione o timer oficial.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <Button variant="secondary" className="gap-2 text-white" onClick={() => triggerTimer()}>
-              <Play className="h-4 w-4" />
-              Iniciar agora
-            </Button>
-            <Button variant="outline" className="gap-2 border-white/20 text-white/80 hover:text-white" onClick={() => navigate('/statistics')}>
-              <Activity className="h-4 w-4" />
-              Ver desempenho
-            </Button>
-          </div>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-primary">Tools & Focus</p>
+          <h1 className="text-3xl font-serif font-light text-white">Central de Pomodoro</h1>
         </div>
+      </div>
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-[1.4fr,0.6fr]">
-          <div className="space-y-5">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-3">
-                <label className="text-xs font-semibold uppercase tracking-[0.35em] text-white/60">
-                  Trabalho (min)
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="120"
-                  value={workMinutes}
-                  onChange={(e) => {
-                    const value = parseInt(e.target.value) || 25;
-                    setWorkMinutes(Math.max(1, Math.min(120, value)));
-                  }}
-                  className="w-full border-b border-white/10 bg-transparent px-2 py-3 text-2xl font-mono font-semibold text-white focus:border-primary focus:outline-none"
-                />
+      {/* Timer Card - Grande e Centralizado */}
+      <div className="flex items-center justify-center min-h-[500px]">
+        <Card className="border border-primary/30 bg-gradient-to-br from-primary/5 via-primary/3 to-transparent shadow-2xl shadow-primary/10 w-full max-w-2xl">
+          <CardContent className="p-12">
+            <div className="flex flex-col items-center justify-center space-y-8">
+              {/* Timer Display */}
+              <div className="text-center">
+                <p className="text-xs uppercase tracking-[0.5em] text-white/60 mb-6">Próximo ciclo</p>
+                <div className="text-8xl md:text-9xl font-mono font-bold text-white mb-4">
+                  {workMinutes.toString().padStart(2, '0')}:00
+                </div>
+                <p className="text-sm text-white/60">Sincroniza com o timer flutuante do Nexus</p>
               </div>
-              <div className="space-y-3">
-                <label className="text-xs font-semibold uppercase tracking-[0.35em] text-white/60">
-                  Descanso curto (min)
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="60"
-                  value={shortBreakMinutes}
-                  onChange={(e) => {
-                    const value = parseInt(e.target.value) || 5;
-                    setShortBreakMinutes(Math.max(1, Math.min(60, value)));
-                  }}
-                  className="w-full border-b border-white/10 bg-transparent px-2 py-3 text-2xl font-mono font-semibold text-white focus:border-primary focus:outline-none"
-                />
-              </div>
-              <div className="space-y-3">
-                <label className="text-xs font-semibold uppercase tracking-[0.35em] text-white/60">
-                  Descanso longo (min)
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="60"
-                  value={longBreakMinutes}
-                  onChange={(e) => {
-                    const value = parseInt(e.target.value) || 15;
-                    setLongBreakMinutes(Math.max(1, Math.min(60, value)));
-                  }}
-                  className="w-full border-b border-white/10 bg-transparent px-2 py-3 text-2xl font-mono font-semibold text-white focus:border-primary focus:outline-none"
-                />
-              </div>
-            </div>
 
-            <div className="flex flex-wrap gap-4 text-sm text-white/70">
-              <div className="flex items-center gap-2">
-                <Clock3 className="h-4 w-4 text-primary" />
-                {sessions.length} sessões registradas
+              {/* Action Buttons */}
+              <div className="w-full space-y-3">
+                <Button 
+                  className="w-full gap-2 bg-primary text-white hover:bg-primary/90 h-14 text-lg font-semibold" 
+                  onClick={() => triggerTimer(undefined, 'work')}
+                >
+                  <Play className="h-5 w-5" />
+                  Iniciar Trabalho
+                </Button>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button 
+                    variant="outline" 
+                    className="gap-2 border-white/20 text-white/80 hover:text-white hover:border-primary/50 h-12" 
+                    onClick={() => triggerTimer(undefined, 'shortBreak')}
+                  >
+                    <Play className="h-4 w-4" />
+                    Descanso Curto
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="gap-2 border-white/20 text-white/80 hover:text-white hover:border-primary/50 h-12" 
+                    onClick={() => triggerTimer(undefined, 'longBreak')}
+                  >
+                    <Play className="h-4 w-4" />
+                    Descanso Longo
+                  </Button>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Flame className="h-4 w-4 text-primary" />
-                {stats.streakDays} dias de streak
-              </div>
-            </div>
-          </div>
 
-          <div className="border border-white/10 bg-transparent p-6 text-center">
-            <p className="text-xs uppercase tracking-[0.45em] text-white/70">Próximo ciclo</p>
-            <div className="mt-4 text-6xl font-mono font-bold text-white">
-              {workMinutes.toString().padStart(2, '0')}:00
-            </div>
-            <p className="mt-2 text-sm text-white/60">Sincroniza com o timer flutuante do Nexus.</p>
-            <div className="mt-6 space-y-2">
-              <Button className="w-full gap-2 bg-primary text-white hover:bg-primary/90" onClick={() => triggerTimer(undefined, 'work')}>
-                <Play className="h-4 w-4" />
-                Iniciar trabalho
+              {/* Config Button */}
+              <Button 
+                variant="ghost" 
+                className="gap-2 text-white/70 hover:text-white hover:bg-white/5 mt-4" 
+                onClick={() => setShowConfig(true)}
+              >
+                <Settings className="h-4 w-4" />
+                Configurar Timer
               </Button>
-              <div className="grid grid-cols-2 gap-2">
-                <Button variant="outline" className="gap-2 border-white/20 text-white/80 hover:text-white" onClick={() => triggerTimer(undefined, 'shortBreak')}>
-                  <Play className="h-3 w-3" />
-                  Descanso curto
-                </Button>
-                <Button variant="outline" className="gap-2 border-white/20 text-white/80 hover:text-white" onClick={() => triggerTimer(undefined, 'longBreak')}>
-                  <Play className="h-3 w-3" />
-                  Descanso longo
-                </Button>
-              </div>
             </div>
-            <p className="mt-3 text-[11px] text-white/60">
-              Dica: revise metas antes de iniciar e use o botão flutuante para acompanhar em qualquer página.
-            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Config Modal */}
+      <Modal isOpen={showConfig} onClose={() => setShowConfig(false)}>
+        <div className="bg-background rounded-xl p-6 max-w-md w-full">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-white">Configurar Timer</h2>
+            <button
+              onClick={() => setShowConfig(false)}
+              className="p-2 rounded-lg hover:bg-white/5 transition-colors"
+            >
+              <X className="h-5 w-5 text-muted-foreground" />
+            </button>
+          </div>
+
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <label className="text-sm font-semibold uppercase tracking-[0.2em] text-white/60">
+                Trabalho (minutos)
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="120"
+                value={workMinutes}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value) || 25;
+                  setWorkMinutes(Math.max(1, Math.min(120, value)));
+                }}
+                className="w-full border-b border-white/10 bg-transparent px-2 py-3 text-2xl font-mono font-semibold text-white focus:border-primary focus:outline-none"
+              />
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-sm font-semibold uppercase tracking-[0.2em] text-white/60">
+                Descanso Curto (minutos)
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="60"
+                value={shortBreakMinutes}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value) || 5;
+                  setShortBreakMinutes(Math.max(1, Math.min(60, value)));
+                }}
+                className="w-full border-b border-white/10 bg-transparent px-2 py-3 text-2xl font-mono font-semibold text-white focus:border-primary focus:outline-none"
+              />
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-sm font-semibold uppercase tracking-[0.2em] text-white/60">
+                Descanso Longo (minutos)
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="60"
+                value={longBreakMinutes}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value) || 15;
+                  setLongBreakMinutes(Math.max(1, Math.min(60, value)));
+                }}
+                className="w-full border-b border-white/10 bg-transparent px-2 py-3 text-2xl font-mono font-semibold text-white focus:border-primary focus:outline-none"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button 
+                variant="outline" 
+                className="flex-1 border-white/20 text-white/80 hover:text-white" 
+                onClick={() => setShowConfig(false)}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                className="flex-1 bg-primary text-white hover:bg-primary/90" 
+                onClick={() => setShowConfig(false)}
+              >
+                Salvar
+              </Button>
+            </div>
           </div>
         </div>
-      </section>
+      </Modal>
 
       <section className="grid gap-6 lg:grid-cols-[1.35fr,0.65fr]">
         <Card className="border border-white/10 bg-transparent">
