@@ -67,196 +67,74 @@ const Settings = Target;
 const Lightning = Zap;
 const Palette = Sparkles;
 
-// Tipos permitidos (remover conquistas sem lógica)
-const allowedTypes = new Set([
-  'first_step',
-  'consistency',
-  'master',
-  'architect',
-  'scholar',
-  'target',
-  'explorer',
-  'dedicated',
-  'connector',
-  'speed',
-  'wisdom',
-  'creative'
-]);
+// Helper function to get icon and category for achievement
+function getAchievementMetadata(achievement: any): { icon: any; category: string; rarity: string; points: number } {
+  const id = achievement.id || '';
+  const type = achievement.type || '';
+  
+  // Map achievement IDs to icons and categories
+  const iconMap: Record<string, any> = {
+    'first_step': Star,
+    'welcome': Users, // Using Users as Hand alias
+    'first_visit': Eye,
+    'beginner': Play,
+    'explorer': Compass,
+    'first_flashcard': BookOpen,
+    'first_note': FileText,
+    'first_project': Code,
+    'consistency_7': Flame,
+    'consistency_30': Flame,
+    'master_10': BookOpen,
+    'master_50': BookOpen,
+    'master_100': Trophy,
+    'architect_1': Code,
+    'architect_5': Code,
+    'architect_10': Rocket,
+    'dedicated_1': Clock,
+    'dedicated_10': Timer,
+    'dedicated_50': Award,
+    'note_creator_5': FileText,
+    'note_creator_25': PenTool,
+  };
 
-// Generate 100+ achievements (serão filtrados pelos tipos permitidos)
-const generateAchievements = (): Achievement[] => {
-  const achievements: Achievement[] = [];
+  // Determine category based on type
+  const categoryMap: Record<string, string> = {
+    'first_step': 'Início',
+    'consistency': 'Consistência',
+    'master': 'Flashcards',
+    'architect': 'Projetos',
+    'dedicated': 'Estudo',
+    'connector': 'Notas',
+  };
 
-  // Início e Onboarding (10)
-  achievements.push(
-    { id: 'first_step', type: 'first_step', category: 'Início', title: 'Primeiro Passo', description: 'Complete o onboarding', icon: Star, rarity: 'common', points: 10 },
-    { id: '2', type: 'first_step', category: 'Início', title: 'Bem-vindo', description: 'Faça login pela primeira vez', icon: Hand, rarity: 'common', points: 5 },
-    { id: '4', type: 'first_step', category: 'Início', title: 'Primeira Visita', description: 'Explore o dashboard', icon: Eye, rarity: 'common', points: 5 },
-    { id: '5', type: 'first_step', category: 'Início', title: 'Iniciante', description: 'Complete sua primeira atividade', icon: Play, rarity: 'common', points: 10 },
-    { id: '6', type: 'first_step', category: 'Início', title: 'Explorador', description: 'Visite 5 páginas diferentes', icon: Compass, rarity: 'common', points: 15 },
-    { id: '7', type: 'first_step', category: 'Início', title: 'Curioso', description: 'Leia 3 artigos de ajuda', icon: Lightbulb, rarity: 'common', points: 10 },
-    { id: 'first_project', type: 'first_step', category: 'Início', title: 'Primeiro Projeto', description: 'Crie seu primeiro projeto', icon: Code, rarity: 'common', points: 20 },
-    { id: 'first_note', type: 'first_step', category: 'Início', title: 'Primeira Nota', description: 'Crie sua primeira nota', icon: FileText, rarity: 'common', points: 10 },
-    { id: 'first_flashcard', type: 'first_step', category: 'Início', title: 'Primeiro Flashcard', description: 'Crie seu primeiro flashcard', icon: BookOpen, rarity: 'common', points: 10 },
-  );
-
-  // Estudo e Consistência (20)
-  for (let i = 1; i <= 20; i++) {
-    const days = i * 7;
-    achievements.push({
-      id: `study_${i}`,
-      type: 'consistency',
-      category: 'Estudo',
-      title: `${days} Dias de Estudo`,
-      description: `Estude ${days} dias consecutivos`,
-      icon: days <= 7 ? Clock : days <= 30 ? Calendar : days <= 100 ? Trophy : Crown,
-      rarity: days <= 7 ? 'common' : days <= 30 ? 'rare' : days <= 100 ? 'epic' : 'legendary',
-      points: days * 2,
-      progress: 0,
-      target: days,
-    });
+  // Determine rarity based on achievement
+  let rarity: 'common' | 'rare' | 'epic' | 'legendary' = 'common';
+  if (id.includes('_100') || id.includes('_50') || id.includes('_30') || id.includes('_25')) {
+    rarity = 'rare';
+  }
+  if (id.includes('_100') && type === 'master') {
+    rarity = 'epic';
   }
 
-  // Horas Estudadas (15)
-  const hourMilestones = [1, 5, 10, 25, 50, 100, 250, 500, 750, 1000, 1500, 2000, 3000, 5000, 10000];
-  hourMilestones.forEach((hours, i) => {
-    achievements.push({
-      id: `hours_${hours}`,
-      type: 'dedicated',
-      category: 'Estudo',
-      title: `${hours}h de Estudo`,
-      description: `Acumule ${hours} horas de estudo`,
-      icon: hours <= 10 ? Clock : hours <= 100 ? Timer : hours <= 1000 ? Award : Crown,
-      rarity: hours <= 10 ? 'common' : hours <= 100 ? 'rare' : hours <= 1000 ? 'epic' : 'legendary',
-      points: hours * 3,
-      progress: 0,
-      target: hours,
-    });
-  });
-
-  // Módulos e Currículo (15)
-  for (let i = 1; i <= 15; i++) {
-    achievements.push({
-      id: `module_${i}`,
-      type: 'scholar',
-      category: 'Currículo',
-      title: `${i} Módulo${i > 1 ? 's' : ''} Concluído${i > 1 ? 's' : ''}`,
-      description: `Complete ${i} ${i === 1 ? 'módulo' : 'módulos'}`,
-      icon: i <= 3 ? BookOpen : i <= 10 ? GraduationCap : Crown,
-      rarity: i <= 3 ? 'common' : i <= 10 ? 'rare' : 'epic',
-      points: i * 25,
-      progress: 0,
-      target: i,
-    });
+  // Calculate points
+  let points = 0;
+  if (achievement.unlockedAt) {
+    // Base points for unlocked achievements
+    if (type === 'first_step') points = 10;
+    else if (type === 'consistency') points = achievement.target ? achievement.target * 5 : 50;
+    else if (type === 'master') points = achievement.target ? achievement.target * 2 : 20;
+    else if (type === 'architect') points = achievement.target ? achievement.target * 50 : 50;
+    else if (type === 'dedicated') points = achievement.target ? achievement.target * 10 : 10;
+    else if (type === 'connector') points = achievement.target ? achievement.target * 5 : 5;
   }
 
-  // Projetos (20)
-  for (let i = 1; i <= 20; i++) {
-    achievements.push({
-      id: `project_${i}`,
-      type: 'architect',
-      category: 'Projetos',
-      title: `${i} Projeto${i > 1 ? 's' : ''} Concluído${i > 1 ? 's' : ''}`,
-      description: `Complete ${i} ${i === 1 ? 'projeto' : 'projetos'}`,
-      icon: i <= 5 ? Code : i <= 15 ? Rocket : Crown,
-      rarity: i <= 5 ? 'common' : i <= 15 ? 'rare' : 'epic',
-      points: i * 50,
-      progress: 0,
-      target: i,
-    });
-  }
-
-  // Flashcards (15)
-  const flashcardMilestones = [10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000, 250000, 500000];
-  flashcardMilestones.forEach((count, i) => {
-    achievements.push({
-      id: `flashcard_${count}`,
-      type: 'master',
-      category: 'Flashcards',
-      title: `${count} Flashcards Revisados`,
-      description: `Revise ${count} flashcards`,
-      icon: count <= 100 ? BookOpen : count <= 1000 ? FileText : Crown,
-      rarity: count <= 100 ? 'common' : count <= 1000 ? 'rare' : count <= 10000 ? 'epic' : 'legendary',
-      points: count / 10,
-      progress: 0,
-      target: count,
-    });
-  });
-
-  // Notas e Conhecimento (15)
-  for (let i = 1; i <= 15; i++) {
-    const count = i * 5;
-    achievements.push({
-      id: `note_${count}`,
-      type: 'connector',
-      category: 'Notas',
-      title: `${count} Notas Criadas`,
-      description: `Crie ${count} notas`,
-      icon: count <= 25 ? FileText : count <= 50 ? PenTool : Brain,
-      rarity: count <= 25 ? 'common' : count <= 50 ? 'rare' : 'epic',
-      points: count * 2,
-      progress: 0,
-      target: count,
-    });
-  }
-
-  // Conexões (10)
-  for (let i = 1; i <= 10; i++) {
-    const connections = i * 10;
-    achievements.push({
-      id: `connection_${connections}`,
-      type: 'connector',
-      category: 'Conhecimento',
-      title: `${connections} Conexões`,
-      description: `Crie ${connections} conexões entre notas`,
-      icon: Network,
-      rarity: connections <= 50 ? 'common' : connections <= 100 ? 'rare' : 'epic',
-      points: connections * 3,
-      progress: 0,
-      target: connections,
-    });
-  }
-
-  // Recursos e Biblioteca (10)
-  const resourceMilestones = [1, 5, 10, 25, 50, 100, 250, 500, 1000, 2500];
-  resourceMilestones.forEach((count, i) => {
-    achievements.push({
-      id: `resource_${count}`,
-      type: 'explorer',
-      category: 'Biblioteca',
-      title: `${count} Recurso${count > 1 ? 's' : ''} Adicionado${count > 1 ? 's' : ''}`,
-      description: `Adicione ${count} ${count === 1 ? 'recurso' : 'recursos'} à biblioteca`,
-      icon: count <= 10 ? BookOpen : count <= 100 ? Layers : Globe,
-      rarity: count <= 10 ? 'common' : count <= 100 ? 'rare' : 'epic',
-      points: count * 5,
-      progress: 0,
-      target: count,
-    });
-  });
-
-  // Velocidade e Eficiência (10)
-  achievements.push(
-    { id: 'speed_1', type: 'speed', category: 'Velocidade', title: 'Rápido', description: 'Complete um módulo em menos de 1 semana', icon: Rocket, rarity: 'rare', points: 50 },
-    { id: 'speed_2', type: 'speed', category: 'Velocidade', title: 'Muito Rápido', description: 'Complete 5 módulos em 1 mês', icon: Zap, rarity: 'epic', points: 200 },
-    { id: 'speed_3', type: 'speed', category: 'Velocidade', title: 'Relâmpago', description: 'Complete 10 módulos em 2 meses', icon: Lightning, rarity: 'legendary', points: 500 },
-    { id: 'efficiency_1', type: 'target', category: 'Eficiência', title: 'Focado', description: 'Complete 3 projetos sem pausar', icon: Target, rarity: 'rare', points: 100 },
-    { id: 'efficiency_2', type: 'target', category: 'Eficiência', title: 'Muito Focado', description: 'Complete 10 projetos sem pausar', icon: Target, rarity: 'epic', points: 300 },
-    { id: 'efficiency_3', type: 'target', category: 'Eficiência', title: 'Laser', description: 'Complete 25 projetos sem pausar', icon: Target, rarity: 'legendary', points: 750 },
-    { id: 'streak_7', type: 'consistency', category: 'Sequência', title: 'Semana Perfeita', description: '7 dias consecutivos de estudo', icon: Flame, rarity: 'common', points: 50 },
-    { id: 'streak_30', type: 'consistency', category: 'Sequência', title: 'Mês Perfeito', description: '30 dias consecutivos de estudo', icon: Flame, rarity: 'rare', points: 200 },
-    { id: 'streak_100', type: 'consistency', category: 'Sequência', title: 'Centenário', description: '100 dias consecutivos de estudo', icon: Flame, rarity: 'epic', points: 500 },
-    { id: 'streak_365', type: 'consistency', category: 'Sequência', title: 'Ano Perfeito', description: '365 dias consecutivos de estudo', icon: Flame, rarity: 'legendary', points: 2000 },
-  );
-
-  // Especiais (apenas conquistas alcançáveis)
-  achievements.push(
-    { id: 'special_1', type: 'creative', category: 'Especiais', title: 'Artista', description: 'Crie 50 notas com imagens', icon: Palette, rarity: 'epic', points: 300 },
-    { id: 'special_2', type: 'creative', category: 'Especiais', title: 'Escritor', description: 'Escreva mais de 10.000 palavras em notas', icon: PenTool, rarity: 'epic', points: 500 },
-    { id: 'special_3', type: 'wisdom', category: 'Especiais', title: 'Sábio', description: 'Complete 100% do currículo', icon: Brain, rarity: 'legendary', points: 2000 },
-  );
-
-  return achievements;
-};
+  return {
+    icon: iconMap[id] || Star,
+    category: categoryMap[type] || 'Geral',
+    rarity,
+    points,
+  };
+}
 
 export default function Achievements() {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
@@ -292,45 +170,22 @@ export default function Achievements() {
       const response = await api.get('/achievements');
       const serverAchievements = response.data || [];
       
-      // Merge with generated achievements - use server as source of truth for unlocked status
-      const generated = generateAchievements().filter((a) => allowedTypes.has(a.type));
-      const merged = generated.map(gen => {
-        // Try to find matching achievement by id or by title/description
-        const server = serverAchievements.find((s: any) => {
-          // Match by id first
-          if (s.id === gen.id) return true;
-          // Match by title and description for key achievements
-          if (s.title === gen.title && s.description === gen.description) return true;
-          // Special mapping for first_step
-          if (gen.id === '1' && s.id === 'first_step') return true;
-          // Special mapping for first_project
-          if (gen.id === '8' && s.id === 'first_project') return true;
-          // Special mapping for first_note
-          if (gen.id === '9' && s.id === 'first_note') return true;
-          // Special mapping for first_flashcard
-          if (gen.id === '10' && s.id === 'first_flashcard') return true;
-          return false;
-        });
-        
-        if (server) {
-          // Server data takes precedence, especially for unlockedAt
-          return { 
-            ...gen, 
-            ...server,
-            // Preserve icon and other frontend-specific properties
-            icon: gen.icon,
-            category: gen.category || 'Geral',
-            rarity: gen.rarity || 'common',
-            points: gen.points || 0,
-          };
-        }
-        return gen;
+      // Use only server achievements and add metadata
+      const achievementsWithMetadata = serverAchievements.map((achievement: any) => {
+        const metadata = getAchievementMetadata(achievement);
+        return {
+          ...achievement,
+          icon: metadata.icon,
+          category: metadata.category,
+          rarity: metadata.rarity,
+          points: metadata.points,
+        };
       });
       
-      setAchievements(merged);
+      setAchievements(achievementsWithMetadata);
     } catch (error) {
       console.error('Failed to fetch achievements:', error);
-      setAchievements(generateAchievements().filter((a) => allowedTypes.has(a.type)));
+      setAchievements([]);
     } finally {
       setLoading(false);
     }

@@ -127,6 +127,22 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
       include: { tasks: true },
     });
 
+    // Track activity for achievements
+    try {
+      await prisma.activity.create({
+        data: {
+          userId: req.userId,
+          courseId,
+          type: 'project_created',
+          title: 'Projeto Criado',
+          description: `Criou projeto: ${projectData.title}`,
+        } as any,
+      });
+    } catch (activityError) {
+      // Don't fail the request if activity tracking fails
+      console.warn('Failed to track project creation activity:', activityError);
+    }
+
     return res.json(project);
   } catch (error: any) {
     console.error('Error creating project:', error);
@@ -212,6 +228,26 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
       data: updateData,
       include: { tasks: true },
     });
+
+    // Track activity if project was completed
+    if (updateData.status === 'finalizado' || updateData.status === 'concluido') {
+      const wasCompleted = existingProject.status !== 'finalizado' && existingProject.status !== 'concluido';
+      if (wasCompleted) {
+        try {
+          await prisma.activity.create({
+            data: {
+              userId: req.userId!,
+              courseId,
+              type: 'project_completed',
+              title: 'Projeto Concluído',
+              description: `Concluiu projeto: ${project.title}`,
+            } as any,
+          });
+        } catch (activityError) {
+          console.warn('Failed to track project completion activity:', activityError);
+        }
+      }
+    }
 
     return res.json(project);
   } catch (error) {

@@ -171,22 +171,22 @@ export default function Documents() {
         <h1 className="text-3xl font-serif font-light text-white tracking-tight">Documentos Mestres</h1>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {documents.map((doc) => {
           const Icon = doc.icon;
           const isLoading = loadingDocId === doc.id;
           return (
-            <Card key={doc.id} className="h-full border border-white/5 bg-card hover:border-primary/30 transition-all group">
-              <CardHeader>
-                <div className="mb-4 inline-flex rounded-lg bg-primary/10 p-3 group-hover:bg-primary/20 transition-colors">
+            <Card key={doc.id} className="flex flex-col border-b border-white/10 bg-transparent hover:border-primary/30 transition-all group min-h-[280px]">
+              <CardHeader className="pb-4">
+                <div className="mb-4 inline-flex p-3">
                   <Icon className="h-6 w-6 text-primary" />
                 </div>
-                <CardTitle className="text-lg font-light text-white">{doc.title}</CardTitle>
+                <CardTitle className="text-lg font-light text-white min-h-[56px]">{doc.title}</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground leading-relaxed">{doc.description}</p>
-                <div className="flex items-center justify-between pt-2 border-t border-white/5">
-                  <span className="text-xs text-muted-foreground">{doc.size}</span>
+              <CardContent className="flex flex-col flex-1 space-y-4 pt-0">
+                <p className="text-sm text-white/70 leading-relaxed flex-1 min-h-[60px]">{doc.description}</p>
+                <div className="flex items-center justify-between pt-4 border-t border-white/10">
+                  <span className="text-xs text-white/60">{doc.size}</span>
                   <div className="flex gap-2">
                     <Button
                       variant="outline"

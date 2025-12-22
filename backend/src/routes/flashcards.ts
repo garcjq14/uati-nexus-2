@@ -136,6 +136,22 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
       } as any,
     });
 
+    // Track activity for achievements
+    try {
+      await prisma.activity.create({
+        data: {
+          userId: req.userId,
+          courseId,
+          type: 'flashcard_created',
+          title: 'Flashcard Criado',
+          description: `Criou flashcard: ${req.body.front?.substring(0, 50) || 'Novo flashcard'}`,
+        } as any,
+      });
+    } catch (activityError) {
+      // Don't fail the request if activity tracking fails
+      console.warn('Failed to track flashcard creation activity:', activityError);
+    }
+
     return res.json(flashcard);
   } catch (error) {
     return res.status(500).json({ error: 'Failed to create flashcard' });
@@ -179,6 +195,22 @@ router.post('/:id/review', authenticate, async (req: AuthRequest, res) => {
         repetitions: nextRepetitions,
       },
     });
+
+    // Track activity for achievements
+    try {
+      await prisma.activity.create({
+        data: {
+          userId: req.userId,
+          courseId,
+          type: 'flashcard_reviewed',
+          title: 'Flashcard Revisado',
+          description: `Revisou flashcard: ${updated.front?.substring(0, 50) || 'Flashcard'}`,
+        } as any,
+      });
+    } catch (activityError) {
+      // Don't fail the request if activity tracking fails
+      console.warn('Failed to track flashcard review activity:', activityError);
+    }
 
     return res.json(updated);
   } catch (error) {

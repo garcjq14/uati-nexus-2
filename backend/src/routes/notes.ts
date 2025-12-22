@@ -115,6 +115,22 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
       data: noteData,
     });
 
+    // Track activity for achievements
+    try {
+      await prisma.activity.create({
+        data: {
+          userId: req.userId,
+          courseId,
+          type: 'note_created',
+          title: 'Nota Criada',
+          description: `Criou nota: ${noteData.title || 'Nova nota'}`,
+        } as any,
+      });
+    } catch (activityError) {
+      // Don't fail the request if activity tracking fails
+      console.warn('Failed to track note creation activity:', activityError);
+    }
+
     return res.json(note);
   } catch (error) {
     return res.status(500).json({ error: 'Failed to create note' });

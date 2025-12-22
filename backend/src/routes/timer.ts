@@ -34,6 +34,24 @@ router.post('/session', authenticate, async (req: AuthRequest, res: Response) =>
       } as any,
     });
 
+    // Track activity for achievements
+    try {
+      const duration = req.body.duration || 0;
+      const durationMinutes = Math.floor(duration / 60);
+      await prisma.activity.create({
+        data: {
+          userId: req.userId,
+          courseId,
+          type: 'study_session_completed',
+          title: 'Sessão de Estudo Concluída',
+          description: `Completou sessão de ${durationMinutes} minutos`,
+        } as any,
+      });
+    } catch (activityError) {
+      // Don't fail the request if activity tracking fails
+      console.warn('Failed to track study session activity:', activityError);
+    }
+
     return res.json(session);
   } catch (error: any) {
     console.error('Failed to create session:', error);
