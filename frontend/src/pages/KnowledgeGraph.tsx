@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Card, CardContent } from '../components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Modal } from '../components/ui/modal';
 import { Input } from '../components/ui/input';
-import { Plus, Maximize2, ZoomIn, ZoomOut, Focus, Search, Download, Edit, Trash2, Map } from 'lucide-react';
+import { Plus, Maximize2, ZoomIn, ZoomOut, Focus, Search, Download, Edit, Trash2, Map as MapIcon } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { ContextualHelp } from '../components/help/ContextualHelp';
 import { useToast } from '../components/feedback/ToastSystem';
@@ -802,7 +802,7 @@ function GraphContent() {
           <Card className="border-white/5 bg-white/[0.02] backdrop-blur">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-white">
-                <Map className="h-4 w-4 text-primary" />
+                <MapIcon className="h-4 w-4 text-primary" />
                 Legenda e instruções
               </CardTitle>
             </CardHeader>
