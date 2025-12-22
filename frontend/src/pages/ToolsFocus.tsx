@@ -60,8 +60,32 @@ const focusLinks = [
 export default function ToolsFocus() {
   const [sessions, setSessions] = useState<TimerSession[]>([]);
   const [loading, setLoading] = useState(true);
-  const [customMinutes, setCustomMinutes] = useState(25);
+  const [workMinutes, setWorkMinutes] = useState(() => {
+    const saved = localStorage.getItem('pomodoro_work_minutes');
+    return saved ? parseInt(saved) : 25;
+  });
+  const [shortBreakMinutes, setShortBreakMinutes] = useState(() => {
+    const saved = localStorage.getItem('pomodoro_short_break_minutes');
+    return saved ? parseInt(saved) : 5;
+  });
+  const [longBreakMinutes, setLongBreakMinutes] = useState(() => {
+    const saved = localStorage.getItem('pomodoro_long_break_minutes');
+    return saved ? parseInt(saved) : 15;
+  });
   const navigate = useNavigate();
+  
+  // Salvar configurações no localStorage
+  useEffect(() => {
+    localStorage.setItem('pomodoro_work_minutes', workMinutes.toString());
+  }, [workMinutes]);
+  
+  useEffect(() => {
+    localStorage.setItem('pomodoro_short_break_minutes', shortBreakMinutes.toString());
+  }, [shortBreakMinutes]);
+  
+  useEffect(() => {
+    localStorage.setItem('pomodoro_long_break_minutes', longBreakMinutes.toString());
+  }, [longBreakMinutes]);
 
   useEffect(() => {
     let isMounted = true;
@@ -163,10 +187,15 @@ export default function ToolsFocus() {
     });
   };
 
-  const triggerTimer = (minutes?: number) => {
+  const triggerTimer = (minutes?: number, type: 'work' | 'shortBreak' | 'longBreak' = 'work') => {
     if (typeof window === 'undefined') return;
-    const timerMinutes = minutes || customMinutes;
-    window.dispatchEvent(new CustomEvent('setTimerPreset', { detail: { minutes: timerMinutes } }));
+    let timerMinutes = minutes;
+    if (!timerMinutes) {
+      if (type === 'work') timerMinutes = workMinutes;
+      else if (type === 'shortBreak') timerMinutes = shortBreakMinutes;
+      else timerMinutes = longBreakMinutes;
+    }
+    window.dispatchEvent(new CustomEvent('setTimerPreset', { detail: { minutes: timerMinutes, type } }));
     window.dispatchEvent(new CustomEvent('openSessionTimer'));
   };
 
@@ -179,7 +208,7 @@ export default function ToolsFocus() {
             <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-primary">Tools & Focus</p>
             <h1 className="text-3xl font-serif font-light text-white">Central de Pomodoro</h1>
             <p className="mt-2 text-sm text-white/70">
-              Configure a duração do ciclo, acompanhe minutos investidos e acione o timer oficial sem sair do painel.
+              Configure tempos de trabalho, descanso curto e descanso longo. Acompanhe minutos investidos e acione o timer oficial.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -196,22 +225,55 @@ export default function ToolsFocus() {
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[1.4fr,0.6fr]">
           <div className="space-y-5">
-            <div className="space-y-3">
-              <label className="text-xs font-semibold uppercase tracking-[0.35em] text-white/60">
-                Duração do ciclo (minutos)
-              </label>
-              <input
-                type="number"
-                min="1"
-                max="120"
-                value={customMinutes}
-                onChange={(e) => {
-                  const value = parseInt(e.target.value) || 25;
-                  setCustomMinutes(Math.max(1, Math.min(120, value)));
-                }}
-                className="w-full border-b border-white/10 bg-transparent px-2 py-3 text-3xl font-mono font-semibold text-white focus:border-primary focus:outline-none"
-              />
-              <p className="text-xs text-white/60">Configure entre 1 e 120 minutos</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-3">
+                <label className="text-xs font-semibold uppercase tracking-[0.35em] text-white/60">
+                  Trabalho (min)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="120"
+                  value={workMinutes}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value) || 25;
+                    setWorkMinutes(Math.max(1, Math.min(120, value)));
+                  }}
+                  className="w-full border-b border-white/10 bg-transparent px-2 py-3 text-2xl font-mono font-semibold text-white focus:border-primary focus:outline-none"
+                />
+              </div>
+              <div className="space-y-3">
+                <label className="text-xs font-semibold uppercase tracking-[0.35em] text-white/60">
+                  Descanso curto (min)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="60"
+                  value={shortBreakMinutes}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value) || 5;
+                    setShortBreakMinutes(Math.max(1, Math.min(60, value)));
+                  }}
+                  className="w-full border-b border-white/10 bg-transparent px-2 py-3 text-2xl font-mono font-semibold text-white focus:border-primary focus:outline-none"
+                />
+              </div>
+              <div className="space-y-3">
+                <label className="text-xs font-semibold uppercase tracking-[0.35em] text-white/60">
+                  Descanso longo (min)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="60"
+                  value={longBreakMinutes}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value) || 15;
+                    setLongBreakMinutes(Math.max(1, Math.min(60, value)));
+                  }}
+                  className="w-full border-b border-white/10 bg-transparent px-2 py-3 text-2xl font-mono font-semibold text-white focus:border-primary focus:outline-none"
+                />
+              </div>
             </div>
 
             <div className="flex flex-wrap gap-4 text-sm text-white/70">
@@ -229,13 +291,25 @@ export default function ToolsFocus() {
           <div className="border border-white/10 bg-transparent p-6 text-center">
             <p className="text-xs uppercase tracking-[0.45em] text-white/70">Próximo ciclo</p>
             <div className="mt-4 text-6xl font-mono font-bold text-white">
-              {customMinutes.toString().padStart(2, '0')}:00
+              {workMinutes.toString().padStart(2, '0')}:00
             </div>
             <p className="mt-2 text-sm text-white/60">Sincroniza com o timer flutuante do Nexus.</p>
-            <Button className="mt-6 w-full gap-2 bg-primary text-white hover:bg-primary/90" onClick={() => triggerTimer()}>
-              <Play className="h-4 w-4" />
-              Iniciar pomodoro oficial
-            </Button>
+            <div className="mt-6 space-y-2">
+              <Button className="w-full gap-2 bg-primary text-white hover:bg-primary/90" onClick={() => triggerTimer(undefined, 'work')}>
+                <Play className="h-4 w-4" />
+                Iniciar trabalho
+              </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="outline" className="gap-2 border-white/20 text-white/80 hover:text-white" onClick={() => triggerTimer(undefined, 'shortBreak')}>
+                  <Play className="h-3 w-3" />
+                  Descanso curto
+                </Button>
+                <Button variant="outline" className="gap-2 border-white/20 text-white/80 hover:text-white" onClick={() => triggerTimer(undefined, 'longBreak')}>
+                  <Play className="h-3 w-3" />
+                  Descanso longo
+                </Button>
+              </div>
+            </div>
             <p className="mt-3 text-[11px] text-white/60">
               Dica: revise metas antes de iniciar e use o botão flutuante para acompanhar em qualquer página.
             </p>

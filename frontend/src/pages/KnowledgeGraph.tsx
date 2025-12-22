@@ -722,9 +722,8 @@ function GraphContent() {
                     }}
                     placeholder="Nome do conceito"
                   />
-                  <Button onClick={handleAddNode} disabled={!newNodeLabel.trim() || saving} className="whitespace-nowrap">
+                  <Button onClick={handleAddNode} disabled={!newNodeLabel.trim() || saving} className="p-2 min-w-[40px]">
                     <Plus className="h-4 w-4" />
-                    Adicionar
                   </Button>
                 </div>
               </div>

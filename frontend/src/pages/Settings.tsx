@@ -361,12 +361,6 @@ export default function Settings() {
             <p className="mt-2 text-xl font-semibold text-white">{autoSave ? 'Ativo' : 'Inativo'}</p>
           </div>
           <div className="border-b border-white/10 pb-4">
-            <p className="text-xs uppercase tracking-wide text-white/60">Notificações</p>
-            <p className="mt-2 text-xl font-semibold text-white">
-              {Object.values(notifications).filter(Boolean).length}/3
-            </p>
-          </div>
-          <div className="border-b border-white/10 pb-4">
             <p className="text-xs uppercase tracking-wide text-white/60">Tema</p>
             <p className="mt-2 text-xl font-semibold text-white">{theme === 'dark' ? 'Modo escuro' : 'Modo claro'}</p>
           </div>
@@ -961,33 +955,6 @@ export default function Settings() {
                     Ver Documentos Mestres
                   </Link>
                 </Button>
-              </div>
-
-              <div className="border-b border-red-500/30 pb-6">
-                <h3 className="mb-3 flex items-center gap-2 font-semibold text-white">
-                  <Trash2 className="h-4 w-4 text-red-400" />
-                  Excluir curso
-                </h3>
-                <p className="mb-3 text-sm text-muted-foreground">
-                  Esta ação remove o curso atual e seus dados associados. Digite <span className="text-white font-semibold">excluir</span> para confirmar.
-                </p>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Input
-                    value={deleteConfirm}
-                    onChange={(e) => setDeleteConfirm(e.target.value)}
-                    placeholder="excluir"
-                    className="w-40 bg-white/5 border-white/10 text-white"
-                  />
-                  <Button
-                    variant="outline"
-                    onClick={handleDeleteCourse}
-                    disabled={deleteConfirm !== 'excluir' || deletingCourse}
-                    className="gap-2 bg-red-500/20 border-red-500/50 text-red-400 hover:bg-red-500/30 hover:text-red-300"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    {deletingCourse ? 'Excluindo...' : 'Excluir curso'}
-                  </Button>
-                </div>
               </div>
             </CardContent>
           </Card>
