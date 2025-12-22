@@ -1,66 +1,67 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { ArrowLeft, Save, Eye, X, Tag } from 'lucide-react';
+import { ArrowLeft, Save, Eye } from 'lucide-react';
 import { useAchievementChecker } from '../hooks/useAchievementChecker';
 import api from '../lib/api';
-
-interface Note {
-  id?: string;
-  title: string;
-  content: string;
-  connections: string[];
-  tags: string[];
-  references: string[];
-}
 
 export default function NoteEditor() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { checkAfterAction } = useAchievementChecker();
   const isNew = !id;
-  const [note, setNote] = useState<Note>({
-    title: '',
-    content: '',
-    connections: [],
-    tags: [],
-    references: [],
-  });
-  const [tagInput, setTagInput] = useState('');
-  const [referenceInput, setReferenceInput] = useState('');
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [tagsInput, setTagsInput] = useState('');
+  const [referencesInput, setReferencesInput] = useState('');
   const [showPreview, setShowPreview] = useState(false);
   const [loading, setLoading] = useState(!isNew);
+
+  const parseArrayField = useCallback((value: unknown): string[] => {
+    if (!value) return [];
+    if (Array.isArray(value)) {
+      return value.map((item) => (typeof item === 'string' ? item.trim() : '')).filter(Boolean);
+    }
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value);
+        if (Array.isArray(parsed)) {
+          return parsed.map((item: unknown) => (typeof item === 'string' ? item.trim() : '')).filter(Boolean);
+        }
+      } catch {
+        return value
+          .split(value.includes('\n') ? '\n' : ',')
+          .map((item) => item.trim())
+          .filter(Boolean);
+      }
+      return value
+        .split(value.includes('\n') ? '\n' : ',')
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+    return [];
+  }, []);
 
   const fetchNote = useCallback(async () => {
     if (!id) return;
     try {
-      const response = await api.get<Note>(`/notes/${id}`);
-      // Normalize tags and references to always be arrays
-      const normalizedNote = {
-        ...response.data,
-        title: response.data.title || '',
-        content: response.data.content || '',
-        tags: Array.isArray(response.data.tags) 
-          ? response.data.tags.filter((t: any) => t && typeof t === 'string' && t.trim())
-          : response.data.tags && typeof response.data.tags === 'string'
-            ? [response.data.tags].filter((t: string) => t.trim())
-            : [],
-        references: Array.isArray(response.data.references) 
-          ? response.data.references.filter((r: any) => r && typeof r === 'string' && r.trim())
-          : response.data.references && typeof response.data.references === 'string'
-            ? [response.data.references].filter((r: string) => r.trim())
-            : [],
-        connections: []
-      };
-      setNote(normalizedNote);
+      const response = await api.get(`/notes/${id}`);
+      const data = response.data || {};
+      const parsedTags = parseArrayField(data.tags);
+      const parsedReferences = parseArrayField(data.references);
+
+      setTitle(data.title || '');
+      setContent(data.content || '');
+      setTagsInput(parsedTags.join(', '));
+      setReferencesInput(parsedReferences.join('\n'));
     } catch (error) {
       console.error('Failed to fetch note:', error);
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, parseArrayField]);
 
   useEffect(() => {
     if (!isNew && id) {
@@ -68,46 +69,32 @@ export default function NoteEditor() {
     }
   }, [id, isNew, fetchNote]);
 
-  const addTag = () => {
-    const cleanTag = tagInput.trim();
-    if (cleanTag && !note.tags.includes(cleanTag)) {
-      setNote({ ...note, tags: [...note.tags, cleanTag] });
-      setTagInput('');
-    }
-  };
+  const parsedTags = useMemo(() => {
+    return tagsInput
+      .split(',')
+      .map((tag) => tag.trim())
+      .filter(Boolean);
+  }, [tagsInput]);
 
-  const removeTag = (tag: string) => {
-    setNote({ ...note, tags: note.tags.filter((t) => t !== tag) });
-  };
-
-  const addReference = () => {
-    const cleanRef = referenceInput.trim();
-    if (cleanRef && !note.references.includes(cleanRef)) {
-      setNote({ ...note, references: [...note.references, cleanRef] });
-      setReferenceInput('');
-    }
-  };
-
-  const removeReference = (ref: string) => {
-    setNote({ ...note, references: note.references.filter((r) => r !== ref) });
-  };
-
+  const parsedReferences = useMemo(() => {
+    return referencesInput
+      .split('\n')
+      .map((ref) => ref.trim())
+      .filter(Boolean);
+  }, [referencesInput]);
 
   const handleSave = async () => {
-    if (!note.title || !note.content) {
+    if (!title || !content) {
       alert('Título e conteúdo são obrigatórios');
       return;
     }
 
     try {
-      const cleanTags = (note.tags || []).filter((t: string) => t && typeof t === 'string' && t.trim());
-      const cleanReferences = (note.references || []).filter((r: string) => r && typeof r === 'string' && r.trim());
-      
       const payload = { 
-        title: note.title.trim(),
-        content: note.content.trim(),
-        tags: cleanTags,
-        references: cleanReferences
+        title,
+        content,
+        tags: parsedTags,
+        references: parsedReferences
       };
       if (isNew) {
         await api.post('/notes', payload);
@@ -162,8 +149,8 @@ export default function NoteEditor() {
             </CardHeader>
             <CardContent>
               <Input
-                value={note.title}
-                onChange={(e) => setNote({ ...note, title: e.target.value })}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
                 placeholder="Nome do conceito..."
               />
             </CardContent>
@@ -187,13 +174,13 @@ export default function NoteEditor() {
               {showPreview ? (
                 <div className="prose prose-invert max-w-none">
                   <div className="whitespace-pre-wrap text-muted-foreground">
-                    {note.content}
+                    {content}
                   </div>
                 </div>
               ) : (
                 <textarea
-                  value={note.content}
-                  onChange={(e) => setNote({ ...note, content: e.target.value })}
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
                   placeholder="Explique o conceito como se estivesse ensinando para alguém..."
                   className="w-full rounded-lg border border-border bg-background p-3 text-sm min-h-[300px]"
                 />
@@ -203,82 +190,29 @@ export default function NoteEditor() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Tags</CardTitle>
+              <CardTitle>Tags (separe com vírgulas)</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex gap-2">
-                <Input
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addTag();
-                    }
-                  }}
-                  placeholder="Nova tag..."
-                />
-                <Button onClick={addTag}>Adicionar</Button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {note.tags.map((tag: string) => (
-                  <div
-                    key={tag}
-                    className="flex items-center gap-2 rounded-full bg-primary/20 px-3 py-1 text-sm text-primary"
-                  >
-                    <Tag className="h-3 w-3" />
-                    {tag}
-                    <button
-                      onClick={() => removeTag(tag)}
-                      className="hover:text-primary/70"
-                      aria-label={`Remover tag ${tag}`}
-                      title={`Remover tag ${tag}`}
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
+              <textarea
+                value={tagsInput}
+                onChange={(e) => setTagsInput(e.target.value)}
+                placeholder="ex: algoritmos, estruturas de dados"
+                className="w-full rounded-lg border border-border bg-background p-3 text-sm min-h-[120px]"
+              />
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>Referências</CardTitle>
+              <CardTitle>Referências (uma por linha)</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex gap-2">
-                <Input
-                  value={referenceInput}
-                  onChange={(e) => setReferenceInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addReference();
-                    }
-                  }}
-                  placeholder="Adicionar referência..."
-                />
-                <Button onClick={addReference}>Adicionar</Button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {note.references.map((ref: string, idx: number) => (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-2 rounded-full bg-secondary/20 px-3 py-1 text-sm text-secondary-foreground"
-                  >
-                    {ref}
-                    <button
-                      onClick={() => removeReference(ref)}
-                      className="hover:text-muted-foreground"
-                      aria-label={`Remover referência ${ref}`}
-                      title={`Remover referência ${ref}`}
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
+              <textarea
+                value={referencesInput}
+                onChange={(e) => setReferencesInput(e.target.value)}
+                placeholder="Livro ABC - Capítulo 3&#10;Artigo: https://exemplo.com"
+                className="w-full rounded-lg border border-border bg-background p-3 text-sm min-h-[160px]"
+              />
             </CardContent>
           </Card>
         </div>

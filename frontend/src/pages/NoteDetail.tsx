@@ -2,7 +2,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { ArrowLeft, Edit, Tag } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../lib/api';
 
 export default function NoteDetail() {
@@ -11,30 +11,40 @@ export default function NoteDetail() {
   const [note, setNote] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (id) {
-      fetchNote();
+  const parseArrayField = useCallback((value: unknown): string[] => {
+    if (!value) return [];
+    if (Array.isArray(value)) {
+      return value.map((item) => (typeof item === 'string' ? item.trim() : '')).filter(Boolean);
     }
-  }, [id]);
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value);
+        if (Array.isArray(parsed)) {
+          return parsed.map((item: unknown) => (typeof item === 'string' ? item.trim() : '')).filter(Boolean);
+        }
+      } catch {
+        return value
+          .split(value.includes('\n') ? '\n' : ',')
+          .map((item) => item.trim())
+          .filter(Boolean);
+      }
+      return value
+        .split(value.includes('\n') ? '\n' : ',')
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+    return [];
+  }, []);
 
-  const fetchNote = async () => {
+  const fetchNote = useCallback(async () => {
     try {
       const response = await api.get(`/notes/${id}`);
-      // Normalize tags and references to always be arrays
       const normalizedNote = {
         ...response.data,
         title: response.data.title || '',
         content: response.data.content || '',
-        tags: Array.isArray(response.data.tags) 
-          ? response.data.tags.filter((t: any) => t && typeof t === 'string' && t.trim())
-          : response.data.tags && typeof response.data.tags === 'string'
-            ? [response.data.tags].filter((t: string) => t.trim())
-            : [],
-        references: Array.isArray(response.data.references) 
-          ? response.data.references.filter((r: any) => r && typeof r === 'string' && r.trim())
-          : response.data.references && typeof response.data.references === 'string'
-            ? [response.data.references].filter((r: string) => r.trim())
-            : []
+        tags: parseArrayField(response.data.tags),
+        references: parseArrayField(response.data.references)
       };
       setNote(normalizedNote);
     } catch (error) {
@@ -42,7 +52,13 @@ export default function NoteDetail() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, parseArrayField]);
+
+  useEffect(() => {
+    if (id) {
+      fetchNote();
+    }
+  }, [id, fetchNote]);
 
 
   if (loading || !note) {
@@ -96,10 +112,9 @@ export default function NoteDetail() {
             <div className="flex flex-wrap gap-2">
               {note.tags.map((tag: string, idx: number) => (
                 <span
-                  key={idx}
-                  className="inline-flex items-center gap-1 rounded-full bg-primary/20 px-3 py-1 text-sm text-primary"
+                  key={`${tag}-${idx}`}
+                  className="inline-flex items-center rounded-full bg-primary/20 px-3 py-1 text-sm text-primary"
                 >
-                  <Tag className="h-3 w-3" />
                   {tag}
                 </span>
               ))}
