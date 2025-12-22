@@ -225,7 +225,6 @@ export default function ToolsFocus() {
                 <div className="text-8xl md:text-9xl font-mono font-bold text-white mb-4">
                   {workMinutes.toString().padStart(2, '0')}:00
                 </div>
-                <p className="text-sm text-white/60">Sincroniza com o timer flutuante do Nexus</p>
               </div>
 
               {/* Action Buttons */}

@@ -55,7 +55,6 @@ function GraphContent() {
   const [editNodeType, setEditNodeType] = useState('concept');
   const [updatingNode, setUpdatingNode] = useState(false);
   const [deletingNode, setDeletingNode] = useState(false);
-  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
   const { fitView, setCenter } = useReactFlow();
   const { success, error: showError } = useToast();
   const positionUpdateTimeoutRef = useRef<{ [key: string]: ReturnType<typeof setTimeout> }>({});
@@ -195,7 +194,6 @@ function GraphContent() {
 
       setNodes(flowNodes);
       setEdges(flowEdges);
-      setLastSyncedAt(new Date().toISOString());
     } catch (error) {
       console.error('Error fetching knowledge graph:', error);
       const axiosError = error as { 
@@ -210,7 +208,6 @@ function GraphContent() {
         setError('Erro ao carregar o grafo de conhecimento');
         setNodes([]);
         setEdges([]);
-        setLastSyncedAt(new Date().toISOString());
       }
     } finally {
       setLoading(false);
@@ -637,9 +634,6 @@ function GraphContent() {
     );
   }
 
-  const lastSyncLabel = lastSyncedAt
-    ? new Date(lastSyncedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-    : '---';
   const selectedConnections = selectedNode
     ? edges.filter(
         (edge: Edge) => edge.source === selectedNode.id || edge.target === selectedNode.id
@@ -648,7 +642,6 @@ function GraphContent() {
   const heroStats = [
     { label: 'Nós mapeados', value: nodes.length },
     { label: 'Conexões ativas', value: edges.length },
-    { label: 'Última sincronização', value: lastSyncLabel },
     { label: 'Seleção ativa', value: selectedNode ? selectedNode.data.label : 'Nenhuma' },
   ];
   const legendItems = [
