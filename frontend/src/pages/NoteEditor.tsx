@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { ArrowLeft, Save, Eye, X } from 'lucide-react';
+import { useAchievementChecker } from '../hooks/useAchievementChecker';
 import api from '../lib/api';
 
 interface Note {
@@ -18,6 +19,7 @@ interface Note {
 export default function NoteEditor() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { checkAfterAction } = useAchievementChecker();
   const isNew = !id;
   const [note, setNote] = useState<Note>({
     title: '',
@@ -117,13 +119,8 @@ export default function NoteEditor() {
       if (isNew) {
         await api.post('/notes', payload);
         
-        // Check for first note achievement
-        const notesResponse = await api.get('/notes').catch(() => ({ data: [] }));
-        const noteCount = notesResponse.data?.length || 0;
-        if (noteCount === 1) {
-          const { checkFirstNoteAchievement } = await import('../lib/achievements');
-          checkFirstNoteAchievement(noteCount);
-        }
+        // Verificar conquistas automaticamente
+        await checkAfterAction('note_created');
       } else {
         await api.put(`/notes/${id}`, payload);
       }

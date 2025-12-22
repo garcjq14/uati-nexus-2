@@ -5,6 +5,7 @@ import { Modal } from '../ui/modal';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { useToast } from '../feedback/ToastSystem';
+import { useAchievementChecker } from '../../hooks/useAchievementChecker';
 import api from '../../lib/api';
 
 interface AddNoteFloatingProps {
@@ -18,6 +19,7 @@ export function AddNoteFloating({ isOpen, onClose, onSuccess }: AddNoteFloatingP
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
   const { success, error } = useToast();
+  const { checkAfterAction } = useAchievementChecker();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,13 +32,8 @@ export function AddNoteFloating({ isOpen, onClose, onSuccess }: AddNoteFloatingP
         content: content.trim() || '',
       });
       
-      // Check for first note achievement
-      const notesResponse = await api.get('/notes').catch(() => ({ data: [] }));
-      const noteCount = notesResponse.data?.length || 0;
-      if (noteCount === 1) {
-        const { checkFirstNoteAchievement } = await import('../../lib/achievements');
-        checkFirstNoteAchievement(noteCount);
-      }
+      // Verificar conquistas automaticamente
+      await checkAfterAction('note_created');
       
       success('Nota criada com sucesso!');
       setTitle('');

@@ -5,6 +5,7 @@ import { Modal } from '../ui/modal';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { useToast } from '../feedback/ToastSystem';
+import { useAchievementChecker } from '../../hooks/useAchievementChecker';
 import api from '../../lib/api';
 
 interface AddFlashcardFloatingProps {
@@ -22,6 +23,7 @@ export function AddFlashcardFloating({ isOpen, onClose, onSuccess, defaultDeck }
   const [isNewDeck, setIsNewDeck] = useState(!defaultDeck);
   const [loading, setLoading] = useState(false);
   const { success, error } = useToast();
+  const { checkAfterAction } = useAchievementChecker();
 
   useEffect(() => {
     if (isOpen) {
@@ -58,13 +60,8 @@ export function AddFlashcardFloating({ isOpen, onClose, onSuccess, defaultDeck }
         deck: deck.trim(),
       });
       
-      // Check for first flashcard achievement
-      const flashcardsResponse = await api.get('/flashcards').catch(() => ({ data: { flashcards: [] } }));
-      const flashcardCount = flashcardsResponse.data?.flashcards?.length || flashcardsResponse.data?.length || 0;
-      if (flashcardCount === 1) {
-        const { checkFirstFlashcardAchievement } = await import('../../lib/achievements');
-        checkFirstFlashcardAchievement(flashcardCount);
-      }
+      // Verificar conquistas automaticamente
+      await checkAfterAction('flashcard_created');
       
       success('Flashcard criado com sucesso!');
       setFront('');

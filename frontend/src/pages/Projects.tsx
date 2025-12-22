@@ -34,6 +34,7 @@ import { ProjectTimeline } from '../components/projects/ProjectTimeline';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { ContextualHelp } from '../components/help/ContextualHelp';
 import { useToast } from '../components/feedback/ToastSystem';
+import { useAchievementChecker } from '../hooks/useAchievementChecker';
 
 function ProgressBar({ progress }: { progress: number }) {
   const barRef = useRef<HTMLDivElement>(null);
@@ -58,6 +59,7 @@ export default function Projects() {
   const navigate = useNavigate();
   const { courseData, loading, refreshCourseData } = useCourse();
   const { success, error: showError } = useToast();
+  const { checkAfterAction } = useAchievementChecker();
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('todos');
   const [viewMode, setViewMode] = useState<'list' | 'kanban' | 'timeline'>('list');
@@ -172,15 +174,10 @@ export default function Projects() {
       const response = await api.post('/projects', payload);
       console.log('Project created:', response.data);
 
+      // Verificar conquistas automaticamente
+      await checkAfterAction('project_created');
+
       await refreshCourseData();
-      
-      // Check for first project achievement
-      const updatedProjects = await api.get('/projects').catch(() => ({ data: [] }));
-      const projectCount = updatedProjects.data?.length || 0;
-      if (projectCount === 1) {
-        const { checkFirstProjectAchievement } = await import('../lib/achievements');
-        checkFirstProjectAchievement(projectCount);
-      }
       
       setShowCreateProject(false);
       setNewProject({

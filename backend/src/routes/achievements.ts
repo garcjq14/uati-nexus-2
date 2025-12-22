@@ -516,6 +516,224 @@ router.get('/', authenticate, async (req: AuthRequest, res) => {
       });
     }
 
+    // 14. Criador de Flashcards
+    const flashcardCount = flashcards.length;
+    if (flashcardCount >= 10) {
+      achievements.push({
+        id: 'flashcard_creator_10',
+        type: 'master',
+        title: 'Colecionador',
+        description: 'Crie 10 flashcards',
+        unlockedAt: flashcards[0]?.createdAt?.toISOString(),
+      });
+    } else {
+      achievements.push({
+        id: 'flashcard_creator_10',
+        type: 'master',
+        title: 'Colecionador',
+        description: 'Crie 10 flashcards',
+        progress: flashcardCount,
+        target: 10,
+      });
+    }
+
+    if (flashcardCount >= 50) {
+      achievements.push({
+        id: 'flashcard_creator_50',
+        type: 'master',
+        title: 'Mestre Criador',
+        description: 'Crie 50 flashcards',
+        unlockedAt: flashcards[0]?.createdAt?.toISOString(),
+      });
+    } else {
+      achievements.push({
+        id: 'flashcard_creator_50',
+        type: 'master',
+        title: 'Mestre Criador',
+        description: 'Crie 50 flashcards',
+        progress: flashcardCount,
+        target: 50,
+      });
+    }
+
+    // 15. Construtor de Projetos (projetos criados, não apenas concluídos)
+    const projectCount = projects.length;
+    if (projectCount >= 3) {
+      achievements.push({
+        id: 'project_creator_3',
+        type: 'architect',
+        title: 'Inovador',
+        description: 'Crie 3 projetos',
+        unlockedAt: projects[0]?.createdAt?.toISOString(),
+      });
+    } else {
+      achievements.push({
+        id: 'project_creator_3',
+        type: 'architect',
+        title: 'Inovador',
+        description: 'Crie 3 projetos',
+        progress: projectCount,
+        target: 3,
+      });
+    }
+
+    // 16. Velocidade - Sessões de estudo em um único dia
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const sessionsToday = sessions.filter((s: any) => {
+      const sessionDate = new Date(s.createdAt);
+      sessionDate.setHours(0, 0, 0, 0);
+      return sessionDate.getTime() === today.getTime();
+    }).length;
+
+    if (sessionsToday >= 3) {
+      achievements.push({
+        id: 'speed_3_sessions',
+        type: 'consistency',
+        title: 'Foco Total',
+        description: 'Complete 3 sessões de estudo em um dia',
+        unlockedAt: new Date().toISOString(),
+      });
+    } else {
+      achievements.push({
+        id: 'speed_3_sessions',
+        type: 'consistency',
+        title: 'Foco Total',
+        description: 'Complete 3 sessões de estudo em um dia',
+        progress: sessionsToday,
+        target: 3,
+      });
+    }
+
+    // 17. Erudito - Total de flashcards revisados (soma de todas as revisões)
+    const totalFlashcardReviews = flashcards.reduce((sum: number, f: any) => sum + (f.repetitions || 0), 0);
+    if (totalFlashcardReviews >= 200) {
+      achievements.push({
+        id: 'scholar_200',
+        type: 'master',
+        title: 'Erudito',
+        description: 'Revise flashcards 200 vezes no total',
+        unlockedAt: new Date().toISOString(),
+      });
+    } else {
+      achievements.push({
+        id: 'scholar_200',
+        type: 'master',
+        title: 'Erudito',
+        description: 'Revise flashcards 200 vezes no total',
+        progress: totalFlashcardReviews,
+        target: 200,
+      });
+    }
+
+    if (totalFlashcardReviews >= 500) {
+      achievements.push({
+        id: 'scholar_500',
+        type: 'master',
+        title: 'Sábio',
+        description: 'Revise flashcards 500 vezes no total',
+        unlockedAt: new Date().toISOString(),
+      });
+    } else {
+      achievements.push({
+        id: 'scholar_500',
+        type: 'master',
+        title: 'Sábio',
+        description: 'Revise flashcards 500 vezes no total',
+        progress: totalFlashcardReviews,
+        target: 500,
+      });
+    }
+
+    // 18. Conector - Notas com conexões
+    const notesWithConnections = notes.filter((n: any) => {
+      try {
+        const connections = n.connections ? JSON.parse(n.connections) : [];
+        return Array.isArray(connections) && connections.length > 0;
+      } catch {
+        return false;
+      }
+    }).length;
+
+    if (notesWithConnections >= 5) {
+      achievements.push({
+        id: 'connector_5',
+        type: 'connector',
+        title: 'Conector',
+        description: 'Crie 5 notas com conexões',
+        unlockedAt: new Date().toISOString(),
+      });
+    } else {
+      achievements.push({
+        id: 'connector_5',
+        type: 'connector',
+        title: 'Conector',
+        description: 'Crie 5 notas com conexões',
+        progress: notesWithConnections,
+        target: 5,
+      });
+    }
+
+    // 19. Maratonista - 100 horas de estudo
+    if (totalHours >= 100) {
+      achievements.push({
+        id: 'dedicated_100',
+        type: 'dedicated',
+        title: 'Maratonista',
+        description: 'Acumule 100 horas de estudo',
+        unlockedAt: sessions[0]?.createdAt?.toISOString(),
+      });
+    } else {
+      achievements.push({
+        id: 'dedicated_100',
+        type: 'dedicated',
+        title: 'Maratonista',
+        description: 'Acumule 100 horas de estudo',
+        progress: Math.round(totalHours * 10) / 10,
+        target: 100,
+      });
+    }
+
+    // 20. Lendário - 1000 horas de estudo
+    if (totalHours >= 1000) {
+      achievements.push({
+        id: 'dedicated_1000',
+        type: 'dedicated',
+        title: 'Lendário',
+        description: 'Acumule 1000 horas de estudo',
+        unlockedAt: sessions[0]?.createdAt?.toISOString(),
+      });
+    } else {
+      achievements.push({
+        id: 'dedicated_1000',
+        type: 'dedicated',
+        title: 'Lendário',
+        description: 'Acumule 1000 horas de estudo',
+        progress: Math.round(totalHours * 10) / 10,
+        target: 1000,
+      });
+    }
+
+    // 21. Persistente - 100 dias consecutivos
+    if (consecutiveDays >= 100) {
+      achievements.push({
+        id: 'consistency_100',
+        type: 'consistency',
+        title: 'Persistente',
+        description: 'Estude 100 dias consecutivos',
+        unlockedAt: sessions[0]?.createdAt?.toISOString(),
+      });
+    } else {
+      achievements.push({
+        id: 'consistency_100',
+        type: 'consistency',
+        title: 'Persistente',
+        description: 'Estude 100 dias consecutivos',
+        progress: consecutiveDays,
+        target: 100,
+      });
+    }
+
     return res.json(achievements);
   } catch (error) {
     console.error('Failed to fetch achievements:', error);

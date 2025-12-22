@@ -7,6 +7,7 @@ import { Input } from '../components/ui/input';
 import { FileText, BarChart3, Plus, BrainCircuit, RefreshCw, TrendingUp, Edit2, Trash2, History } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useToast } from '../components/feedback/ToastSystem';
+import { useAchievementChecker } from '../hooks/useAchievementChecker';
 import api from '../lib/api';
 
 interface Flashcard {
@@ -37,6 +38,7 @@ type StudyPhase = 'question' | 'answer' | 'complete';
 export default function SpacedRepetition() {
   const { courseData, loading } = useCourse();
   const { success, error } = useToast();
+  const { checkAfterAction } = useAchievementChecker();
 
   // Estados principais
   const [decks, setDecks] = useState<Deck[]>([]);
@@ -120,6 +122,10 @@ export default function SpacedRepetition() {
 
     try {
       await api.post(`/flashcards/${currentCard.id}/review`, { quality });
+      
+      // Verificar conquistas automaticamente após revisar flashcard
+      await checkAfterAction('flashcard_reviewed');
+      
       await loadDecks();
       await loadStats();
 
@@ -158,13 +164,8 @@ export default function SpacedRepetition() {
     try {
       await api.post('/flashcards', flashcardForm);
 
-      // Verificar achievement
-      const response = await api.get('/flashcards');
-      const flashcardCount = response.data?.flashcards?.length || 0;
-      if (flashcardCount === 1) {
-        const { checkFirstFlashcardAchievement } = await import('../lib/achievements');
-        checkFirstFlashcardAchievement(flashcardCount);
-      }
+      // Verificar conquistas automaticamente
+      await checkAfterAction('flashcard_created');
 
       success('Flashcard criado com sucesso!');
       setFlashcardForm({ front: '', back: '', deck: '' });

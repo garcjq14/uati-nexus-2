@@ -31,6 +31,7 @@ import { Skeleton } from '../components/ui/skeleton';
 import { ContextualHelp } from '../components/help/ContextualHelp';
 import api from '../lib/api';
 import { useToast } from '../components/feedback/ToastSystem';
+import { useAchievementChecker } from '../hooks/useAchievementChecker';
 import { CreateCourseModal } from '../components/courses/CreateCourseModal';
 
 const SolidProgressBar = ({ value }: { value: number }) => {
@@ -97,12 +98,17 @@ const DAY_LABELS = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB'] as const;
 export default function Dashboard() {
   const { courseData, currentCourse, loading, refreshCourseData, updateCourse } = useCourse();
   const { success, error: showError } = useToast();
+  const { checkAfterAction } = useAchievementChecker();
   const [showCreateCourseModal, setShowCreateCourseModal] = useState(false);
   
   // Track dashboard visit for achievements
   useEffect(() => {
     trackDashboardVisit();
-  }, []);
+    // Verificar conquistas após visitar o dashboard
+    setTimeout(() => {
+      checkAfterAction('dashboard_visit');
+    }, 500);
+  }, [checkAfterAction]);
   
   const [showWelcome, setShowWelcome] = useState(() => {
     // Initialize welcome state based on localStorage
@@ -295,15 +301,10 @@ export default function Dashboard() {
     try {
       await api.post('/projects', projectForm);
       
-      // Check for first project achievement
-      await refreshCourseData();
-      const updatedProjects = await api.get('/projects').catch(() => ({ data: [] }));
-      const projectCount = updatedProjects.data?.length || 0;
-      if (projectCount === 1) {
-        const { checkFirstProjectAchievement } = await import('../lib/achievements');
-        checkFirstProjectAchievement(projectCount);
-      }
+      // Verificar conquistas automaticamente
+      await checkAfterAction('project_created');
       
+      await refreshCourseData();
       success('Projeto criado com sucesso!');
       setShowProjectModal(false);
       setProjectForm({ title: '', description: '', type: 'Dev', deadline: '' });
@@ -355,13 +356,8 @@ export default function Dashboard() {
     try {
       await api.post('/flashcards', flashcardForm);
       
-      // Check for first flashcard achievement
-      const flashcardsResponse = await api.get('/flashcards').catch(() => ({ data: { flashcards: [] } }));
-      const flashcardCount = flashcardsResponse.data?.flashcards?.length || flashcardsResponse.data?.length || 0;
-      if (flashcardCount === 1) {
-        const { checkFirstFlashcardAchievement } = await import('../lib/achievements');
-        checkFirstFlashcardAchievement(flashcardCount);
-      }
+      // Verificar conquistas automaticamente
+      await checkAfterAction('flashcard_created');
       
       success('Flashcard criado!');
       setShowFlashcardModal(false);

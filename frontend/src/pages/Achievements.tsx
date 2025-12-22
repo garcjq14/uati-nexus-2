@@ -213,6 +213,30 @@ export default function Achievements() {
     return unlockedAchievements.reduce((sum, a) => sum + (a.points || 0), 0);
   }, [unlockedAchievements]);
 
+  // Conquistas recentes (últimas 3 desbloqueadas)
+  const recentAchievements = useMemo(() => {
+    return unlockedAchievements
+      .sort((a, b) => {
+        const dateA = a.unlockedAt ? new Date(a.unlockedAt).getTime() : 0;
+        const dateB = b.unlockedAt ? new Date(b.unlockedAt).getTime() : 0;
+        return dateB - dateA;
+      })
+      .slice(0, 3);
+  }, [unlockedAchievements]);
+
+  // Agrupar conquistas por categoria
+  const achievementsByCategory = useMemo(() => {
+    const grouped: Record<string, typeof achievements> = {};
+    filteredAchievements.forEach(achievement => {
+      const category = achievement.category || 'Geral';
+      if (!grouped[category]) {
+        grouped[category] = [];
+      }
+      grouped[category].push(achievement);
+    });
+    return grouped;
+  }, [filteredAchievements]);
+
   if (loading) {
     return (
       <div className="space-y-8 w-full px-4">
@@ -341,6 +365,36 @@ export default function Achievements() {
         </CardContent>
       </Card>
 
+      {/* Recent Achievements */}
+      {recentAchievements.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-4"
+        >
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-yellow-400" />
+            <h2 className="text-xl font-semibold text-white">Conquistas Recentes</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {recentAchievements.map((achievement, index) => {
+              const typeInfo = achievementTypes[achievement.type] || achievementTypes.first_step;
+              const Icon = achievement.icon || typeInfo.icon;
+              return (
+                <AchievementCard
+                  key={achievement.id}
+                  achievement={achievement}
+                  Icon={Icon}
+                  typeInfo={typeInfo}
+                  index={index}
+                  unlocked={true}
+                />
+              );
+            })}
+          </div>
+        </motion.div>
+      )}
+
       {/* Achievements Grid */}
       <Tabs defaultValue="all" className="space-y-6">
         <TabsList className="grid w-full max-w-2xl grid-cols-3 bg-white/5 border border-white/10 p-1 rounded-lg">
@@ -355,56 +409,69 @@ export default function Achievements() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="all" className="space-y-6">
-          {unlockedAchievements.length > 0 && (
-            <div>
-              <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-green-500" />
-                Desbloqueadas ({unlockedAchievements.length})
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {unlockedAchievements.map((achievement, index) => {
-                  const typeInfo = achievementTypes[achievement.type] || achievementTypes.first_step;
-                  const Icon = achievement.icon || typeInfo.icon;
-                  return (
-                    <AchievementCard
-                      key={achievement.id}
-                      achievement={achievement}
-                      Icon={Icon}
-                      typeInfo={typeInfo}
-                      index={index}
-                      unlocked={true}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-          )}
+        <TabsContent value="all" className="space-y-8">
+          {/* Agrupar por categoria */}
+          {Object.entries(achievementsByCategory).map(([category, categoryAchievements]) => {
+            const categoryUnlocked = categoryAchievements.filter(a => a.unlockedAt);
+            const categoryLocked = categoryAchievements.filter(a => !a.unlockedAt);
+            
+            if (categoryAchievements.length === 0) return null;
 
-          {lockedAchievements.length > 0 && (
-            <div>
-              <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-                <Lock className="h-5 w-5 text-muted-foreground" />
-                Em Progresso ({lockedAchievements.length})
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {lockedAchievements.map((achievement, index) => {
-                  const typeInfo = achievementTypes[achievement.type] || achievementTypes.first_step;
-                  const Icon = achievement.icon || typeInfo.icon;
-                  return (
-                    <AchievementCard
-                      key={achievement.id}
-                      achievement={achievement}
-                      Icon={Icon}
-                      typeInfo={typeInfo}
-                      index={index}
-                      unlocked={false}
-                    />
-                  );
-                })}
+            return (
+              <div key={category} className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                    {category}
+                    <span className="text-sm font-normal text-muted-foreground">
+                      ({categoryUnlocked.length}/{categoryAchievements.length})
+                    </span>
+                  </h2>
+                  <div className="h-px flex-1 bg-white/10 mx-4" />
+                  <div className="text-sm text-muted-foreground">
+                    {Math.round((categoryUnlocked.length / categoryAchievements.length) * 100)}%
+                  </div>
+                </div>
+                
+                {categoryUnlocked.length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                    {categoryUnlocked.map((achievement, index) => {
+                      const typeInfo = achievementTypes[achievement.type] || achievementTypes.first_step;
+                      const Icon = achievement.icon || typeInfo.icon;
+                      return (
+                        <AchievementCard
+                          key={achievement.id}
+                          achievement={achievement}
+                          Icon={Icon}
+                          typeInfo={typeInfo}
+                          index={index}
+                          unlocked={true}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
+                
+                {categoryLocked.length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {categoryLocked.map((achievement, index) => {
+                      const typeInfo = achievementTypes[achievement.type] || achievementTypes.first_step;
+                      const Icon = achievement.icon || typeInfo.icon;
+                      return (
+                        <AchievementCard
+                          key={achievement.id}
+                          achievement={achievement}
+                          Icon={Icon}
+                          typeInfo={typeInfo}
+                          index={index}
+                          unlocked={false}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-            </div>
-          )}
+            );
+          })}
 
           {filteredAchievements.length === 0 && (
             <div className="text-center py-12">
@@ -415,7 +482,7 @@ export default function Achievements() {
         </TabsContent>
 
         <TabsContent value="unlocked">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {unlockedAchievements.map((achievement, index) => {
               const typeInfo = achievementTypes[achievement.type] || achievementTypes.first_step;
               const Icon = achievement.icon || typeInfo.icon;
@@ -434,7 +501,7 @@ export default function Achievements() {
         </TabsContent>
 
         <TabsContent value="locked">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {lockedAchievements.map((achievement, index) => {
               const typeInfo = achievementTypes[achievement.type] || achievementTypes.first_step;
               const Icon = achievement.icon || typeInfo.icon;
@@ -473,72 +540,118 @@ const AchievementCard = ({ achievement, Icon, typeInfo, index, unlocked }: {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.03 }}
       className={cn(
-        "group relative border-b transition-all duration-300",
+        "group relative transition-all duration-300 hover:scale-[1.02]",
         unlocked
-          ? "border-primary/50 border-b"
-          : "border-white/10 border-b opacity-60 hover:opacity-80"
+          ? "opacity-100"
+          : "opacity-70 hover:opacity-90"
       )}
     >
-      <CardContent className="p-5 relative">
-        <div className="flex items-start gap-4">
-          <div className={cn(
-            "p-3 rounded-xl border transition-colors",
-            unlocked
-              ? cn("bg-primary/10 border-primary/20", typeInfo.color)
-              : "bg-white/5 border-white/10"
-          )}>
-            <Icon className={cn("h-6 w-6", unlocked ? typeInfo.color : "text-muted-foreground")} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between mb-1">
-              <h3 className={cn("font-semibold text-sm", unlocked ? "text-white" : "text-muted-foreground")}>
+      <Card className={cn(
+        "h-full border transition-all duration-300 overflow-hidden",
+        unlocked
+          ? "border-primary/30 bg-gradient-to-br from-primary/5 via-primary/3 to-transparent shadow-lg shadow-primary/10"
+          : "border-white/10 bg-white/[0.02] hover:border-white/20"
+      )}>
+        <CardContent className="p-6 relative">
+          {/* Status Badge */}
+          {unlocked && (
+            <div className="absolute top-4 right-4">
+              <div className="relative">
+                <CheckCircle2 className="h-5 w-5 text-green-400" />
+                <div className="absolute inset-0 bg-green-400/20 blur-md rounded-full" />
+              </div>
+            </div>
+          )}
+
+          {/* Icon Section */}
+          <div className="flex items-center gap-4 mb-4">
+            <div className={cn(
+              "p-4 rounded-2xl border-2 transition-all duration-300 flex-shrink-0",
+              unlocked
+                ? cn("bg-primary/10 border-primary/30 shadow-lg shadow-primary/20", typeInfo.color)
+                : "bg-white/5 border-white/10 group-hover:border-white/20"
+            )}>
+              <Icon className={cn(
+                "h-8 w-8 transition-all duration-300",
+                unlocked ? typeInfo.color : "text-muted-foreground group-hover:text-white/60"
+              )} />
+            </div>
+            
+            {/* Title and Category */}
+            <div className="flex-1 min-w-0">
+              <h3 className={cn(
+                "font-bold text-base mb-1 leading-tight",
+                unlocked ? "text-white" : "text-white/70"
+              )}>
                 {achievement.title}
               </h3>
-              {unlocked && (
-                <CheckCircle2 className="h-4 w-4 text-green-400 flex-shrink-0 ml-2" />
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{achievement.description}</p>
-            
-            {!unlocked && achievement.progress !== undefined && (
-              <div className="space-y-1">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Progresso</span>
-                  <span className="text-white">{progress} / {target}</span>
-                </div>
-                <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${percentage}%` }}
-                    transition={{ delay: index * 0.05 + 0.2, duration: 0.8 }}
-                    className="h-full bg-primary rounded-full"
-                  />
-                </div>
-              </div>
-            )}
-
-            <div className="flex items-center justify-between mt-3">
-              <span className={cn(
-                "text-xs px-2 py-1 rounded-full font-medium",
-                achievement.rarity === 'common' && "bg-white/10 text-white",
-                achievement.rarity === 'rare' && "bg-blue-500/20 text-blue-400",
-                achievement.rarity === 'epic' && "bg-purple-500/20 text-purple-400",
-                achievement.rarity === 'legendary' && "bg-yellow-500/20 text-yellow-400"
-              )}>
-                {achievement.rarity === 'common' ? 'Comum' :
-                 achievement.rarity === 'rare' ? 'Rara' :
-                 achievement.rarity === 'epic' ? 'Épica' : 'Lendária'}
-              </span>
-              {achievement.points && (
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Coins className="h-3 w-3" />
-                  {achievement.points}
-                </span>
-              )}
+              <p className="text-xs text-muted-foreground line-clamp-1">
+                {achievement.category || 'Geral'}
+              </p>
             </div>
           </div>
-        </div>
-      </CardContent>
+
+          {/* Description */}
+          <p className={cn(
+            "text-sm mb-4 leading-relaxed",
+            unlocked ? "text-white/80" : "text-muted-foreground"
+          )}>
+            {achievement.description}
+          </p>
+
+          {/* Progress Bar (for locked achievements) */}
+          {!unlocked && achievement.progress !== undefined && (
+            <div className="space-y-2 mb-4">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground font-medium">Progresso</span>
+                <span className="text-white font-semibold">{progress} / {target}</span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${percentage}%` }}
+                  transition={{ delay: index * 0.05 + 0.2, duration: 0.8, ease: "easeOut" }}
+                  className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-full shadow-sm"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Unlocked Date (for unlocked achievements) */}
+          {unlocked && achievement.unlockedAt && (
+            <div className="mb-4">
+              <p className="text-xs text-muted-foreground">
+                Desbloqueado em {new Date(achievement.unlockedAt).toLocaleDateString('pt-BR', {
+                  day: '2-digit',
+                  month: 'short',
+                  year: 'numeric'
+                })}
+              </p>
+            </div>
+          )}
+
+          {/* Footer: Rarity and Points */}
+          <div className="flex items-center justify-between pt-4 border-t border-white/5">
+            <span className={cn(
+              "text-xs px-3 py-1.5 rounded-full font-semibold uppercase tracking-wide",
+              achievement.rarity === 'common' && "bg-white/10 text-white/90",
+              achievement.rarity === 'rare' && "bg-blue-500/20 text-blue-300 border border-blue-500/30",
+              achievement.rarity === 'epic' && "bg-purple-500/20 text-purple-300 border border-purple-500/30",
+              achievement.rarity === 'legendary' && "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30"
+            )}>
+              {achievement.rarity === 'common' ? 'Comum' :
+               achievement.rarity === 'rare' ? 'Rara' :
+               achievement.rarity === 'epic' ? 'Épica' : 'Lendária'}
+            </span>
+            {achievement.points && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5">
+                <Coins className="h-3.5 w-3.5 text-yellow-400" />
+                <span className="text-xs font-semibold text-white">{achievement.points}</span>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </motion.div>
   );
 };
