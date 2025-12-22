@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { ArrowLeft, Save, Eye, X } from 'lucide-react';
+import { ArrowLeft, Save, Eye, X, Tag } from 'lucide-react';
 import { useAchievementChecker } from '../hooks/useAchievementChecker';
 import api from '../lib/api';
 
@@ -28,6 +28,7 @@ export default function NoteEditor() {
     tags: [],
     references: [],
   });
+  const [tagInput, setTagInput] = useState('');
   const [referenceInput, setReferenceInput] = useState('');
   const [showPreview, setShowPreview] = useState(false);
   const [loading, setLoading] = useState(!isNew);
@@ -36,13 +37,21 @@ export default function NoteEditor() {
     if (!id) return;
     try {
       const response = await api.get<Note>(`/notes/${id}`);
-      // Normalize references to always be arrays
+      // Normalize tags and references to always be arrays
       const normalizedNote = {
         ...response.data,
         title: response.data.title || '',
         content: response.data.content || '',
-        references: Array.isArray(response.data.references) ? response.data.references : response.data.references ? [response.data.references] : [],
-        tags: [],
+        tags: Array.isArray(response.data.tags) 
+          ? response.data.tags.filter((t: any) => t && typeof t === 'string' && t.trim())
+          : response.data.tags && typeof response.data.tags === 'string'
+            ? [response.data.tags].filter((t: string) => t.trim())
+            : [],
+        references: Array.isArray(response.data.references) 
+          ? response.data.references.filter((r: any) => r && typeof r === 'string' && r.trim())
+          : response.data.references && typeof response.data.references === 'string'
+            ? [response.data.references].filter((r: string) => r.trim())
+            : [],
         connections: []
       };
       setNote(normalizedNote);
@@ -59,9 +68,22 @@ export default function NoteEditor() {
     }
   }, [id, isNew, fetchNote]);
 
+  const addTag = () => {
+    const cleanTag = tagInput.trim();
+    if (cleanTag && !note.tags.includes(cleanTag)) {
+      setNote({ ...note, tags: [...note.tags, cleanTag] });
+      setTagInput('');
+    }
+  };
+
+  const removeTag = (tag: string) => {
+    setNote({ ...note, tags: note.tags.filter((t) => t !== tag) });
+  };
+
   const addReference = () => {
-    if (referenceInput.trim() && !note.references.includes(referenceInput.trim())) {
-      setNote({ ...note, references: [...note.references, referenceInput.trim()] });
+    const cleanRef = referenceInput.trim();
+    if (cleanRef && !note.references.includes(cleanRef)) {
+      setNote({ ...note, references: [...note.references, cleanRef] });
       setReferenceInput('');
     }
   };
@@ -78,10 +100,14 @@ export default function NoteEditor() {
     }
 
     try {
+      const cleanTags = (note.tags || []).filter((t: string) => t && typeof t === 'string' && t.trim());
+      const cleanReferences = (note.references || []).filter((r: string) => r && typeof r === 'string' && r.trim());
+      
       const payload = { 
-        title: note.title,
-        content: note.content,
-        references: note.references || []
+        title: note.title.trim(),
+        content: note.content.trim(),
+        tags: cleanTags,
+        references: cleanReferences
       };
       if (isNew) {
         await api.post('/notes', payload);
@@ -177,6 +203,47 @@ export default function NoteEditor() {
 
           <Card>
             <CardHeader>
+              <CardTitle>Tags</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-2">
+                <Input
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addTag();
+                    }
+                  }}
+                  placeholder="Nova tag..."
+                />
+                <Button onClick={addTag}>Adicionar</Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {note.tags.map((tag: string) => (
+                  <div
+                    key={tag}
+                    className="flex items-center gap-2 rounded-full bg-primary/20 px-3 py-1 text-sm text-primary"
+                  >
+                    <Tag className="h-3 w-3" />
+                    {tag}
+                    <button
+                      onClick={() => removeTag(tag)}
+                      className="hover:text-primary/70"
+                      aria-label={`Remover tag ${tag}`}
+                      title={`Remover tag ${tag}`}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
               <CardTitle>Referências</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -184,16 +251,21 @@ export default function NoteEditor() {
                 <Input
                   value={referenceInput}
                   onChange={(e) => setReferenceInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && addReference()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addReference();
+                    }
+                  }}
                   placeholder="Adicionar referência..."
                 />
                 <Button onClick={addReference}>Adicionar</Button>
               </div>
               <div className="flex flex-wrap gap-2">
-                {note.references.map((ref, idx) => (
+                {note.references.map((ref: string, idx: number) => (
                   <div
                     key={idx}
-                    className="flex items-center gap-2 rounded-full bg-secondary px-3 py-1 text-sm"
+                    className="flex items-center gap-2 rounded-full bg-secondary/20 px-3 py-1 text-sm text-secondary-foreground"
                   >
                     {ref}
                     <button

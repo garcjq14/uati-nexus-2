@@ -7,6 +7,7 @@ import {
   FileText, 
   Plus, 
   Search, 
+  Tag,
   Network, 
   Grid3x3, 
   List, 
@@ -40,6 +41,8 @@ export default function NotesList() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [allTags, setAllTags] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [sortBy, setSortBy] = useState<SortOption>('recent');
   const [showFilters, setShowFilters] = useState(false);
@@ -48,24 +51,42 @@ export default function NotesList() {
 
   useEffect(() => {
     fetchNotes();
-  }, [debouncedSearch]);
+  }, [debouncedSearch, selectedTag]);
 
   const fetchNotes = useCallback(async () => {
     try {
       setLoading(true);
       const params: any = {};
       if (debouncedSearch) params.search = debouncedSearch;
+      if (selectedTag) params.tags = selectedTag;
 
       const response = await api.get('/notes', { params });
-      // Normalize notes - remove tags and connections
+      // Normalize notes - ensure tags and references are arrays
       const normalizedNotes = response.data.map((note: any) => ({
         ...note,
         title: note.title || '',
         content: note.content || '',
-        tags: [],
+        tags: Array.isArray(note.tags) 
+          ? note.tags.filter((t: any) => t && typeof t === 'string' && t.trim())
+          : note.tags && typeof note.tags === 'string'
+            ? [note.tags].filter((t: string) => t.trim())
+            : [],
         connections: []
       }));
       setNotes(normalizedNotes);
+
+      // Extract all unique tags from normalized notes
+      const tags = new Set<string>();
+      normalizedNotes.forEach((note: any) => {
+        if (Array.isArray(note.tags)) {
+          note.tags.forEach((tag: string) => {
+            if (tag && typeof tag === 'string' && tag.trim()) {
+              tags.add(tag.trim());
+            }
+          });
+        }
+      });
+      setAllTags(Array.from(tags).sort());
     } catch (error) {
       console.error('Failed to fetch notes:', error);
     } finally {
@@ -99,12 +120,14 @@ export default function NotesList() {
 
   const stats = useMemo(() => {
     return {
-      total: notes.length
+      total: notes.length,
+      totalTags: allTags.length
     };
-  }, [notes]);
+  }, [notes, allTags]);
 
   const clearFilters = useCallback(() => {
     setSearch('');
+    setSelectedTag(null);
     setSortBy('recent');
   }, []);
 
@@ -150,10 +173,14 @@ export default function NotesList() {
 
       {/* Stats Bar */}
       {notes.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-1 gap-2 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 gap-2 sm:gap-4">
           <Card className="p-3 sm:p-4">
-            <div className="text-xs sm:text-sm text-muted-foreground">Total de Fichas</div>
+            <div className="text-xs sm:text-sm text-muted-foreground">Total</div>
             <div className="text-lg sm:text-2xl font-bold mt-1">{stats.total}</div>
+          </Card>
+          <Card className="p-3 sm:p-4">
+            <div className="text-xs sm:text-sm text-muted-foreground">Tags</div>
+            <div className="text-lg sm:text-2xl font-bold mt-1">{stats.totalTags}</div>
           </Card>
         </div>
       )}
@@ -233,7 +260,7 @@ export default function NotesList() {
               </div>
 
               {/* Clear Filters */}
-              {(search || sortBy !== 'recent') && (
+              {(search || selectedTag || sortBy !== 'recent') && (
                 <Button variant="ghost" size="sm" onClick={clearFilters}>
                   <X className="mr-2 h-4 w-4" />
                   Limpar filtros
@@ -283,6 +310,24 @@ export default function NotesList() {
                       <p className="text-sm text-muted-foreground line-clamp-3 min-h-[3rem]">
                         {note.content || 'Sem conteúdo'}
                       </p>
+                      {Array.isArray(note.tags) && note.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {note.tags.slice(0, 4).map((tag: string, idx: number) => (
+                            <span
+                              key={idx}
+                              className="inline-flex items-center gap-1 rounded-full bg-primary/20 px-2 py-0.5 text-xs text-primary"
+                            >
+                              <Tag className="h-2.5 w-2.5" />
+                              {tag}
+                            </span>
+                          ))}
+                          {note.tags.length > 4 && (
+                            <span className="text-xs text-muted-foreground self-center">
+                              +{note.tags.length - 4}
+                            </span>
+                          )}
+                        </div>
+                      )}
                       <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2 border-t border-border">
                         {note.updatedAt && (
                           <div className="flex items-center gap-1">
@@ -305,6 +350,24 @@ export default function NotesList() {
                       </p>
                     </CardHeader>
                     <CardContent className="flex flex-col justify-between items-end gap-2 min-w-[200px] border-l border-border pl-4">
+                      {Array.isArray(note.tags) && note.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 justify-end">
+                          {note.tags.slice(0, 3).map((tag: string, idx: number) => (
+                            <span
+                              key={idx}
+                              className="inline-flex items-center gap-1 rounded-full bg-primary/20 px-2 py-0.5 text-xs text-primary"
+                            >
+                              <Tag className="h-2.5 w-2.5" />
+                              {tag}
+                            </span>
+                          ))}
+                          {note.tags.length > 3 && (
+                            <span className="text-xs text-muted-foreground">
+                              +{note.tags.length - 3}
+                            </span>
+                          )}
+                        </div>
+                      )}
                       <div className="flex items-center gap-3 text-xs text-muted-foreground">
                         {note.updatedAt && (
                           <div className="flex items-center gap-1">
@@ -325,8 +388,33 @@ export default function NotesList() {
         </div>
       )}
 
+      {/* Tags Filter */}
+      {allTags.length > 0 && (
+        <div className="flex flex-wrap gap-2 items-center">
+          <span className="text-sm text-muted-foreground hidden sm:inline">Tags:</span>
+          <Button
+            variant={selectedTag === null ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedTag(null)}
+          >
+            Todas
+          </Button>
+          {allTags.map((tag) => (
+            <Button
+              key={tag}
+              variant={selectedTag === tag ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedTag(tag)}
+            >
+              <Tag className="mr-2 h-3 w-3" />
+              {tag}
+            </Button>
+          ))}
+        </div>
+      )}
+
       {/* Results Count */}
-      {sortedAndFilteredNotes.length > 0 && search && (
+      {sortedAndFilteredNotes.length > 0 && (search || selectedTag) && (
         <div className="text-center text-sm text-muted-foreground">
           Mostrando {sortedAndFilteredNotes.length} de {notes.length} fichas
         </div>

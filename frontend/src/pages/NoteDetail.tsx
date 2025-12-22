@@ -1,7 +1,7 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { ArrowLeft, Edit } from 'lucide-react';
+import { ArrowLeft, Edit, Tag } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import api from '../lib/api';
 
@@ -20,12 +20,21 @@ export default function NoteDetail() {
   const fetchNote = async () => {
     try {
       const response = await api.get(`/notes/${id}`);
-      // Normalize references to always be arrays
+      // Normalize tags and references to always be arrays
       const normalizedNote = {
         ...response.data,
         title: response.data.title || '',
         content: response.data.content || '',
-        references: Array.isArray(response.data.references) ? response.data.references : response.data.references ? [response.data.references] : []
+        tags: Array.isArray(response.data.tags) 
+          ? response.data.tags.filter((t: any) => t && typeof t === 'string' && t.trim())
+          : response.data.tags && typeof response.data.tags === 'string'
+            ? [response.data.tags].filter((t: string) => t.trim())
+            : [],
+        references: Array.isArray(response.data.references) 
+          ? response.data.references.filter((r: any) => r && typeof r === 'string' && r.trim())
+          : response.data.references && typeof response.data.references === 'string'
+            ? [response.data.references].filter((r: string) => r.trim())
+            : []
       };
       setNote(normalizedNote);
     } catch (error) {
@@ -73,6 +82,31 @@ export default function NoteDetail() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Tags */}
+      {Array.isArray(note.tags) && note.tags.length > 0 && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Tag className="h-5 w-5 text-primary" />
+              <CardTitle>Tags</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {note.tags.map((tag: string, idx: number) => (
+                <span
+                  key={idx}
+                  className="inline-flex items-center gap-1 rounded-full bg-primary/20 px-3 py-1 text-sm text-primary"
+                >
+                  <Tag className="h-3 w-3" />
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* References */}
       {Array.isArray(note.references) && note.references.length > 0 && (
