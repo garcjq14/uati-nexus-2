@@ -124,7 +124,7 @@ router.get('/', authenticate, async (req: AuthRequest, res) => {
     const pageVisits = activities.filter((a: any) => a.type === 'page_visit');
     const uniquePages = new Set(pageVisits.map((a: any) => a.description || a.title).filter(Boolean));
     if (uniquePages.size >= 5) {
-      const fifthVisit = pageVisits.find((a: any) => {
+      const fifthVisit = pageVisits.find(() => {
         const pages = new Set();
         return pageVisits.some((p: any) => {
           const pageName = p.description || p.title;
