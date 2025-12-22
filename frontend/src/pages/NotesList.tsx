@@ -66,13 +66,12 @@ export default function NotesList() {
         connections: []
       }));
       setNotes(normalizedNotes);
-      setAllTags([]);
     } catch (error) {
       console.error('Failed to fetch notes:', error);
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, selectedTag]);
+  }, [debouncedSearch]);
 
   const sortedAndFilteredNotes = useMemo(() => {
     let filtered = [...notes];
