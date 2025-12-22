@@ -210,25 +210,54 @@ router.get('/', async (_req, res: Response) => {
 
     // Garantir coluna domainId em courses
     try {
-      await prisma.$executeRawUnsafe(`
-        DO $$
-        BEGIN
-          IF NOT EXISTS (
-            SELECT 1 FROM information_schema.columns 
+      // Primeiro, verificar se a coluna existe
+      const columnCheck = await prisma.$queryRaw<Array<{column_name: string}>>`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+          AND table_name = 'courses' 
+          AND column_name = 'domainId';
+      `;
+      
+      if (columnCheck.length === 0) {
+        // Adicionar coluna primeiro
+        await prisma.$executeRawUnsafe(`ALTER TABLE "courses" ADD COLUMN "domainId" TEXT;`);
+        console.log('✅ Coluna domainId adicionada em courses');
+        
+        // Depois, verificar se a constraint já existe antes de criar
+        const constraintCheck = await prisma.$queryRaw<Array<{constraint_name: string}>>`
+          SELECT constraint_name 
+          FROM information_schema.table_constraints 
+          WHERE table_schema = 'public' 
+            AND table_name = 'courses' 
+            AND constraint_name = 'courses_domainId_fkey';
+        `;
+        
+        if (constraintCheck.length === 0) {
+          // Verificar se a tabela domains existe antes de criar a constraint
+          const domainsCheck = await prisma.$queryRaw<Array<{table_name: string}>>`
+            SELECT table_name 
+            FROM information_schema.tables 
             WHERE table_schema = 'public' 
-              AND table_name = 'courses' 
-              AND column_name = 'domainId'
-          ) THEN
-            ALTER TABLE "courses" ADD COLUMN "domainId" TEXT;
-            ALTER TABLE "courses"
+              AND table_name = 'domains';
+          `;
+          
+          if (domainsCheck.length > 0) {
+            await prisma.$executeRawUnsafe(`
+              ALTER TABLE "courses"
               ADD CONSTRAINT "courses_domainId_fkey"
               FOREIGN KEY ("domainId") REFERENCES "domains"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-          END IF;
-        END $$;
-      `);
-      console.log('✅ Coluna domainId em courses verificada/adicionada');
+            `);
+            console.log('✅ Constraint domainId_fkey adicionada em courses');
+          } else {
+            console.warn('⚠️  Tabela domains não existe ainda, pulando constraint domainId_fkey');
+          }
+        }
+      } else {
+        console.log('✅ Coluna domainId já existe em courses');
+      }
     } catch (err: any) {
-      if (!err.message?.includes('already exists') && !err.message?.includes('duplicate')) {
+      if (!err.message?.includes('already exists') && !err.message?.includes('duplicate') && !err.message?.includes('does not exist')) {
         console.warn('⚠️  Aviso ao adicionar domainId em courses:', err.message);
       }
     }
