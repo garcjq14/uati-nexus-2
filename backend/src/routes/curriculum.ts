@@ -83,6 +83,7 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
         order: count + 1,
         block: block?.trim() || null,
         milestones: milestones ? (typeof milestones === 'string' ? milestones : JSON.stringify(milestones)) : '[]',
+        customFields: '{}', // Campo obrigatório do schema
       } as any,
     });
 

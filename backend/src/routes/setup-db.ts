@@ -367,6 +367,7 @@ router.get('/', async (_req, res: Response) => {
         "status" TEXT NOT NULL DEFAULT 'locked',
         "block" TEXT,
         "milestones" TEXT NOT NULL DEFAULT '[]',
+        "customFields" TEXT NOT NULL DEFAULT '{}',
         "powId" TEXT,
         "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -395,6 +396,24 @@ router.get('/', async (_req, res: Response) => {
       console.log('✅ Coluna courseId em curriculum verificada/adicionada');
     } catch (err: any) {
       console.warn('⚠️  Aviso ao adicionar courseId em curriculum:', err.message);
+    }
+
+    // Adicionar customFields em curriculum se não existir
+    try {
+      await prisma.$executeRawUnsafe(`
+        DO $$ 
+        BEGIN
+          IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns 
+            WHERE table_name = 'curriculum' AND column_name = 'customFields'
+          ) THEN
+            ALTER TABLE "curriculum" ADD COLUMN "customFields" TEXT NOT NULL DEFAULT '{}';
+          END IF;
+        END $$;
+      `);
+      console.log('✅ Coluna customFields em curriculum verificada/adicionada');
+    } catch (err: any) {
+      console.warn('⚠️  Aviso ao adicionar customFields em curriculum:', err.message);
     }
 
     // Criar tabela topics
