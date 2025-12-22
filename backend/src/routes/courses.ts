@@ -1,38 +1,10 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticate, AuthRequest } from '../middleware/auth';
+import { getCurrentCourseId } from '../utils/courseHelper';
 
 const router = Router();
 const prisma = new PrismaClient();
-
-// Helper function to ensure user has a course
-const ensureUserHasCourse = async (userId: string): Promise<string> => {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    include: { courses: true },
-  });
-
-  if (!user) {
-    throw new Error('User not found');
-  }
-
-  // If user has a current course, return it
-  if (user.currentCourseId) {
-    return user.currentCourseId;
-  }
-
-  // If user has courses but no current, set first as current
-  if (user.courses.length > 0) {
-    await prisma.user.update({
-      where: { id: userId },
-      data: { currentCourseId: user.courses[0].id },
-    });
-    return user.courses[0].id;
-  }
-
-  // Don't create default course - user must create one with a real name
-  throw new Error('NO_COURSE_AVAILABLE');
-};
 
 // GET /courses - List all courses for the user
 router.get('/', authenticate, async (req: AuthRequest, res) => {
@@ -106,7 +78,7 @@ router.get('/current', authenticate, async (req: AuthRequest, res) => {
     // Ensure user has a course
     let currentCourseId: string;
     try {
-      currentCourseId = await ensureUserHasCourse(req.userId);
+      currentCourseId = await getCurrentCourseId(req.userId);
     } catch (error: any) {
       if (error.message === 'NO_COURSE_AVAILABLE') {
         console.log(`⚠️  User ${req.userId} has no courses available`);

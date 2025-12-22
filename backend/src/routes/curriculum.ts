@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { getCurrentCourseId } from '../utils/courseHelper';
@@ -19,13 +19,32 @@ const ensureModuleForUser = async (moduleId: string, userId: string, courseId: s
   });
 };
 
+const getCourseIdOrRespond = async (req: AuthRequest, res: Response): Promise<string | null> => {
+  try {
+    return await getCurrentCourseId(req.userId!);
+  } catch (error: any) {
+    if (error.message === 'NO_COURSE_AVAILABLE') {
+      res.status(404).json({
+        error: 'No course available',
+        message: 'Crie um curso antes de gerenciar o currículo.',
+        requiresCourseCreation: true,
+      });
+      return null;
+    }
+    throw error;
+  }
+};
+
 router.get('/', authenticate, async (req: AuthRequest, res) => {
   try {
     if (!req.userId) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const courseId = await getCurrentCourseId(req.userId);
+    const courseId = await getCourseIdOrRespond(req, res);
+    if (!courseId) {
+      return;
+    }
     const curriculum = await prisma.curriculum.findMany({
       where: { userId: req.userId, courseId } as any,
       include: { pow: true },
@@ -54,7 +73,10 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
     }
 
     const { code, title, description, status, progress, block, milestones } = req.body;
-    const courseId = await getCurrentCourseId(req.userId);
+    const courseId = await getCourseIdOrRespond(req, res);
+    if (!courseId) {
+      return;
+    }
     const count = await prisma.curriculum.count({ where: { userId: req.userId, courseId } as any });
 
     // Calculate progress from milestones if provided
@@ -138,7 +160,10 @@ router.patch('/bulk-sync', authenticate, async (req: AuthRequest, res) => {
       return res.status(400).json({ error: 'Modules payload is required' });
     }
 
-    const courseId = await getCurrentCourseId(req.userId);
+    const courseId = await getCourseIdOrRespond(req, res);
+    if (!courseId) {
+      return;
+    }
     const existing = await prisma.curriculum.findMany({
       where: { userId: req.userId, courseId } as any,
       select: { id: true },
@@ -204,7 +229,10 @@ router.get('/:id', authenticate, async (req: AuthRequest, res) => {
     }
 
     const { id } = req.params;
-    const courseId = await getCurrentCourseId(req.userId);
+    const courseId = await getCourseIdOrRespond(req, res);
+    if (!courseId) {
+      return;
+    }
 
     const curriculum = await prisma.curriculum.findFirst({
       where: { id, userId: req.userId, courseId } as any,
@@ -228,7 +256,10 @@ router.patch('/:id', authenticate, async (req: AuthRequest, res) => {
     }
 
     const { id } = req.params;
-    const courseId = await getCurrentCourseId(req.userId);
+    const courseId = await getCourseIdOrRespond(req, res);
+    if (!courseId) {
+      return;
+    }
 
     const module = await ensureModuleForUser(id, req.userId, courseId || '');
     if (!module) {
@@ -279,7 +310,10 @@ router.delete('/:id', authenticate, async (req: AuthRequest, res) => {
     }
 
     const { id } = req.params;
-    const courseId = await getCurrentCourseId(req.userId);
+    const courseId = await getCourseIdOrRespond(req, res);
+    if (!courseId) {
+      return;
+    }
 
     const module = await ensureModuleForUser(id, req.userId, courseId);
     if (!module) {
@@ -316,7 +350,10 @@ router.put('/:id/progress', authenticate, async (req: AuthRequest, res) => {
 
     const { id } = req.params;
     const { progress, status } = req.body;
-    const courseId = await getCurrentCourseId(req.userId);
+    const courseId = await getCourseIdOrRespond(req, res);
+    if (!courseId) {
+      return;
+    }
 
     const module = await ensureModuleForUser(id, req.userId, courseId);
     if (!module) {

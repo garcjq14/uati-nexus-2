@@ -283,7 +283,14 @@ export default function Curriculum() {
       
       // Tratar erro de falta de curso
       if (axiosError?.response?.status === 404) {
-        const errorText = axiosError?.response?.data?.error?.toLowerCase() || '';
+        const responseData = axiosError?.response?.data;
+        const errorText = responseData?.error?.toLowerCase() || '';
+
+        if (responseData?.requiresCourseCreation || errorText.includes('no course')) {
+          showError('Você precisa criar um curso antes de adicionar módulos. Use o botão "Criar Curso" no topo para adicionar um curso.');
+          return;
+        }
+
         if (errorText.includes('no major') || errorText.includes('major selected')) {
           showError('Você precisa criar um curso primeiro. Vá para Configurações Iniciais para criar seu curso.');
           return;
