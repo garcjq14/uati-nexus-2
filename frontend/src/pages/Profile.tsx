@@ -6,15 +6,14 @@ import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { 
-  LogOut, Mail, Clock, BookOpen, Code, TrendingUp, Trophy, Upload,
-  Brain, Activity, ArrowRight, Edit, Save, X, Plus, Trash2, 
-  GraduationCap, Briefcase, Languages, Award, FileText, Target,
-  Globe, Github, Linkedin, Twitter, ExternalLink, Calendar, MapPin,
-  CheckCircle2, PlayCircle, Video, File, Layers, Zap, BarChart3,
-  Clock3, BookMarked, PenTool, CheckSquare
+  LogOut, Mail, BookOpen, Code, Trophy, Upload,
+  Brain, ArrowRight, Edit, X, Plus, Trash2, 
+  GraduationCap, Briefcase, Languages, Award, FileText,
+  Github, Linkedin, ExternalLink, MapPin,
+  Clock3
 } from 'lucide-react';
 import { useState, useRef, useMemo, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { cn } from '../lib/utils';
 
 const LEVEL_NAMES = [
@@ -57,6 +56,8 @@ interface AcademicInfo {
   startDate: string;
   endDate: string;
   status: 'studying' | 'completed' | 'paused';
+  gpa?: string;
+  description?: string;
 }
 
 interface Experience {
@@ -68,6 +69,7 @@ interface Experience {
   endDate: string;
   description: string;
   current: boolean;
+  location?: string;
 }
 
 interface Language {
@@ -81,6 +83,8 @@ interface Certification {
   name: string;
   issuer: string;
   date: string;
+  expiryDate?: string;
+  credentialId?: string;
   link?: string;
 }
 
@@ -91,11 +95,13 @@ interface Publication {
   venue: string;
   date: string;
   link?: string;
+  authors?: string;
 }
 
 interface ProfileData {
-  bio: string;
-  objective: string;
+  headline: string;
+  location: string;
+  about: string;
   academicInfo: AcademicInfo | null;
   experiences: Experience[];
   languages: Language[];
@@ -107,14 +113,6 @@ interface StudySession {
   id: string;
   duration: number;
   type: string;
-  createdAt: string;
-}
-
-interface Activity {
-  id: string;
-  type: string;
-  title: string;
-  description: string;
   createdAt: string;
 }
 
@@ -130,11 +128,10 @@ export default function Profile() {
   const [competences, setCompetences] = useState<Competence[]>([]);
   const [loadingCompetences, setLoadingCompetences] = useState(true);
   const [studySessions, setStudySessions] = useState<StudySession[]>([]);
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [loadingUatiData, setLoadingUatiData] = useState(true);
   const [profileData, setProfileData] = useState<ProfileData>({
-    bio: '',
-    objective: '',
+    headline: '',
+    location: '',
+    about: '',
     academicInfo: null,
     experiences: [],
     languages: [],
@@ -149,7 +146,17 @@ export default function Profile() {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       try {
-        setProfileData(JSON.parse(stored));
+        const parsed = JSON.parse(stored);
+        setProfileData({
+          headline: parsed.headline || '',
+          location: parsed.location || '',
+          about: parsed.about || parsed.bio || '',
+          academicInfo: parsed.academicInfo || null,
+          experiences: parsed.experiences || [],
+          languages: parsed.languages || [],
+          certifications: parsed.certifications || [],
+          publications: parsed.publications || [],
+        });
       } catch (e) {
         console.error('Failed to parse profile data:', e);
       }
@@ -181,24 +188,15 @@ export default function Profile() {
     fetchCompetences();
   }, []);
 
-  // Buscar dados da UATI (sessões de estudo e atividades)
+  // Buscar dados da UATI (sessões de estudo)
   useEffect(() => {
     const fetchUatiData = async () => {
       try {
-        setLoadingUatiData(true);
-        const [sessionsResponse, activitiesResponse] = await Promise.all([
-          api.get('/timer/history').catch(() => ({ data: [] })),
-          api.get('/activities?limit=50').catch(() => ({ data: [] })),
-        ]);
-        
+        const sessionsResponse = await api.get('/timer/history').catch(() => ({ data: [] }));
         setStudySessions(Array.isArray(sessionsResponse.data) ? sessionsResponse.data : []);
-        setActivities(Array.isArray(activitiesResponse.data) ? activitiesResponse.data : []);
       } catch (error) {
         console.error('Failed to fetch UATI data:', error);
         setStudySessions([]);
-        setActivities([]);
-      } finally {
-        setLoadingUatiData(false);
       }
     };
     fetchUatiData();
@@ -291,55 +289,6 @@ export default function Profile() {
     );
   }, [courseData]);
 
-  // Estatísticas de matérias
-  const curriculumStats = useMemo(() => {
-    const completed = courseData.curriculum.filter(c => c.status === 'completed');
-    const active = courseData.curriculum.filter(c => c.status === 'active');
-    const locked = courseData.curriculum.filter(c => c.status === 'locked');
-    const totalProgress = courseData.curriculum.length > 0
-      ? Math.round(courseData.curriculum.reduce((sum, c) => sum + c.progress, 0) / courseData.curriculum.length)
-      : 0;
-    
-    return {
-      total: courseData.curriculum.length,
-      completed: completed.length,
-      active: active.length,
-      locked: locked.length,
-      averageProgress: totalProgress,
-    };
-  }, [courseData.curriculum]);
-
-  // Estatísticas de recursos
-  const resourcesStats = useMemo(() => {
-    const completed = courseData.resources.filter(r => r.status === 'concluido');
-    const reading = courseData.resources.filter(r => r.status === 'lendo');
-    const totalProgress = courseData.resources.length > 0
-      ? Math.round(courseData.resources.reduce((sum, r) => sum + (r.progress || 0), 0) / courseData.resources.length)
-      : 0;
-    
-    return {
-      total: courseData.resources.length,
-      completed: completed.length,
-      reading: reading.length,
-      averageProgress: totalProgress,
-      byFormat: {
-        livro: courseData.resources.filter(r => r.format === 'Livro').length,
-        video: courseData.resources.filter(r => r.format === 'Video').length,
-        pdf: courseData.resources.filter(r => r.format === 'PDF').length,
-        audio: courseData.resources.filter(r => r.format === 'Audio').length,
-      },
-    };
-  }, [courseData.resources]);
-
-  // Estatísticas de flashcards
-  const flashcardsStats = useMemo(() => {
-    const total = courseData.flashcards.length;
-    const due = stats.flashcardsDue || 0;
-    const decks = new Set(courseData.flashcards.map(f => f.deck)).size;
-    
-    return { total, due, decks };
-  }, [courseData.flashcards, stats.flashcardsDue]);
-
   // Estatísticas de sessões de estudo
   const sessionsStats = useMemo(() => {
     const total = studySessions.length;
@@ -355,51 +304,24 @@ export default function Profile() {
     return { total, totalHours, thisWeek };
   }, [studySessions]);
 
-  // Matérias agrupadas por status
-  const curriculumByStatus = useMemo(() => {
-    return {
-      completed: courseData.curriculum.filter(c => c.status === 'completed').sort((a, b) => b.progress - a.progress),
-      active: courseData.curriculum.filter(c => c.status === 'active').sort((a, b) => b.progress - a.progress),
-      locked: courseData.curriculum.filter(c => c.status === 'locked'),
-    };
-  }, [courseData.curriculum]);
-
-  // Recursos mais estudados
-  const topResources = useMemo(() => {
-    return [...courseData.resources]
-      .sort((a, b) => (b.progress || 0) - (a.progress || 0))
-      .slice(0, 6);
-  }, [courseData.resources]);
-
-  const competencesByCategory = useMemo(() => {
-    const grouped: Record<string, Competence[]> = {};
-    competences.forEach(comp => {
-      const category = comp.category || 'Outras';
-      if (!grouped[category]) {
-        grouped[category] = [];
-      }
-      grouped[category].push(comp);
-    });
-    return grouped;
-  }, [competences]);
-
   const topCompetences = useMemo(() => {
     return [...competences]
       .sort((a, b) => b.currentLevel - a.currentLevel)
-      .slice(0, 6);
+      .slice(0, 10);
   }, [competences]);
 
-  // Handlers para edição (mantidos do código anterior)
+  // Handlers para edição
   const handleAddExperience = () => {
     const newExp: Experience = {
       id: Date.now().toString(),
       title: '',
       company: '',
-      type: 'academic',
+      type: 'professional',
       startDate: '',
       endDate: '',
       description: '',
       current: false,
+      location: '',
     };
     saveProfileData({ ...profileData, experiences: [...profileData.experiences, newExp] });
     setEditingSection(`exp-${newExp.id}`);
@@ -499,7 +421,7 @@ export default function Profile() {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8">
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-8">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -507,8 +429,8 @@ export default function Profile() {
         className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
       >
         <div>
-          <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-primary mb-2">Currículo Universitário</p>
-          <h1 className="text-3xl font-serif font-light text-white tracking-tight">Perfil Acadêmico</h1>
+          <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-primary mb-2">Currículo Profissional</p>
+          <h1 className="text-3xl font-serif font-light text-white tracking-tight">Perfil</h1>
         </div>
         <div className="flex gap-2">
           <Button 
@@ -531,7 +453,7 @@ export default function Profile() {
         </div>
       </motion.div>
 
-      {/* Perfil Principal */}
+      {/* Perfil Principal - Estilo LinkedIn */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -539,7 +461,8 @@ export default function Profile() {
       >
         <Card className="border border-white/10 bg-transparent">
           <CardContent className="p-8">
-            <div className="flex flex-col md:flex-row gap-8 items-center md:items-start">
+            <div className="flex flex-col md:flex-row gap-6 items-start">
+              {/* Avatar */}
               <div className="relative group">
                 <img
                   src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.name}&background=780606&color=fff`}
@@ -566,14 +489,15 @@ export default function Profile() {
                 />
               </div>
 
-              <div className="flex-1 text-center md:text-left">
+              {/* Info Principal */}
+              <div className="flex-1">
                 {editingName ? (
-                  <div className="flex items-center justify-center md:justify-start gap-2 mb-4">
+                  <div className="flex items-center gap-2 mb-3">
                     <input
                       type="text"
                       value={nameValue}
                       onChange={(e) => setNameValue(e.target.value)}
-                      className="text-3xl font-light bg-transparent border-b-2 border-primary focus:outline-none text-white text-center md:text-left"
+                      className="text-3xl font-light bg-transparent border-b-2 border-primary focus:outline-none text-white"
                       autoFocus
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') handleNameSave();
@@ -587,61 +511,111 @@ export default function Profile() {
                     <Button size="sm" variant="ghost" onClick={() => { setEditingName(false); setNameValue(user?.name || ''); }} className="h-8 w-8 p-0">✕</Button>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center md:justify-start gap-2 mb-4">
+                  <div className="flex items-center gap-2 mb-3">
                     <h2 className="text-3xl font-light text-white">{user?.name}</h2>
                     <button onClick={() => setEditingName(true)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-white/5 rounded">
                       <Edit className="h-4 w-4 text-muted-foreground" />
                     </button>
                   </div>
                 )}
-                
-                <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm text-muted-foreground mb-4">
-                  <div className="flex items-center gap-2">
-                    <Mail className="h-4 w-4" />
-                    <span>{user?.email}</span>
+
+                {/* Headline */}
+                {editingSection === 'headline' ? (
+                  <div className="flex items-center gap-2 mb-3">
+                    <Input
+                      value={profileData.headline}
+                      onChange={(e) => saveProfileData({ ...profileData, headline: e.target.value })}
+                      placeholder="Título profissional (ex: Estudante de Ciência da Computação)"
+                      className="bg-transparent border-white/10"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') setEditingSection(null);
+                      }}
+                    />
+                    <Button size="sm" variant="ghost" onClick={() => setEditingSection(null)} className="h-8 w-8 p-0">✓</Button>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Trophy className="h-4 w-4 text-primary" />
-                    <span className="text-primary">Nível {level + 1} • {levelName}</span>
+                ) : (
+                  <div className="flex items-center gap-2 mb-3">
+                    <p className="text-lg text-muted-foreground">
+                      {profileData.headline || 'Adicione um título profissional'}
+                    </p>
+                    <button onClick={() => setEditingSection('headline')} className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Edit className="h-3 w-3 text-muted-foreground" />
+                    </button>
                   </div>
-                </div>
+                )}
+
+                {/* Localização */}
+                {editingSection === 'location' ? (
+                  <div className="flex items-center gap-2 mb-4">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <Input
+                      value={profileData.location}
+                      onChange={(e) => saveProfileData({ ...profileData, location: e.target.value })}
+                      placeholder="Localização"
+                      className="bg-transparent border-white/10 flex-1"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') setEditingSection(null);
+                      }}
+                    />
+                    <Button size="sm" variant="ghost" onClick={() => setEditingSection(null)} className="h-8 w-8 p-0">✓</Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 mb-4">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      {profileData.location || 'Adicione sua localização'}
+                    </span>
+                    <button onClick={() => setEditingSection('location')} className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Edit className="h-3 w-3 text-muted-foreground" />
+                    </button>
+                  </div>
+                )}
 
                 {/* Links Sociais */}
-                <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-6">
+                <div className="flex flex-wrap items-center gap-3 mb-4">
+                  {user?.email && (
+                    <a href={`mailto:${user.email}`} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
+                      <Mail className="h-4 w-4" />
+                      <span>Email</span>
+                    </a>
+                  )}
                   {user?.github && (
-                    <a href={user.github} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg border border-white/10 hover:border-primary/30 hover:bg-white/5 transition-all">
-                      <Github className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                    <a href={user.github} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
+                      <Github className="h-4 w-4" />
+                      <span>GitHub</span>
                     </a>
                   )}
                   {user?.linkedin && (
-                    <a href={user.linkedin} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg border border-white/10 hover:border-primary/30 hover:bg-white/5 transition-all">
-                      <Linkedin className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                    <a href={user.linkedin} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
+                      <Linkedin className="h-4 w-4" />
+                      <span>LinkedIn</span>
                     </a>
                   )}
                   {user?.portfolio && (
-                    <a href={user.portfolio} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg border border-white/10 hover:border-primary/30 hover:bg-white/5 transition-all">
-                      <ExternalLink className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                    <a href={user.portfolio} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
+                      <ExternalLink className="h-4 w-4" />
+                      <span>Portfólio</span>
                     </a>
                   )}
                 </div>
 
-                {/* Stats */}
-                <div className="grid grid-cols-4 gap-4 mt-6">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-white">{stats.progress}%</div>
-                    <div className="text-xs text-muted-foreground">Progresso</div>
+                {/* Stats Rápidas */}
+                <div className="flex flex-wrap gap-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Trophy className="h-4 w-4 text-primary" />
+                    <span className="text-muted-foreground">Nível {level + 1} • {levelName}</span>
                   </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-white">{stats.hoursStudied.toFixed(1)}</div>
-                    <div className="text-xs text-muted-foreground">Horas</div>
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="h-4 w-4 text-blue-400" />
+                    <span className="text-muted-foreground">{stats.booksRead} livros</span>
                   </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-white">{stats.booksRead}</div>
-                    <div className="text-xs text-muted-foreground">Livros</div>
+                  <div className="flex items-center gap-2">
+                    <Code className="h-4 w-4 text-green-400" />
+                    <span className="text-muted-foreground">{completedProjects.length} projetos</span>
                   </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-white">{completedProjects.length}</div>
-                    <div className="text-xs text-muted-foreground">Projetos</div>
+                  <div className="flex items-center gap-2">
+                    <Clock3 className="h-4 w-4 text-purple-400" />
+                    <span className="text-muted-foreground">{sessionsStats.totalHours.toFixed(1)}h estudadas</span>
                   </div>
                 </div>
               </div>
@@ -650,380 +624,166 @@ export default function Profile() {
         </Card>
       </motion.div>
 
-      {/* Seção UATI - Atividades na Plataforma */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <p className="text-xs font-mono uppercase tracking-[0.3em] text-primary mb-1">UATI Nexus</p>
-            <h2 className="text-xl font-serif font-light text-white">Atividades na Plataforma</h2>
+      {/* Sobre */}
+      <Card className="border border-white/10 bg-transparent">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-white">Sobre</h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setEditingSection(editingSection === 'about' ? null : 'about')}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
           </div>
-        </div>
+          {editingSection === 'about' ? (
+            <div className="space-y-3">
+              <textarea
+                value={profileData.about}
+                onChange={(e) => saveProfileData({ ...profileData, about: e.target.value })}
+                placeholder="Escreva sobre você, suas experiências, objetivos e interesses..."
+                className="w-full min-h-[150px] rounded-lg border border-white/10 bg-white/5 p-3 text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/30"
+              />
+              <Button size="sm" onClick={() => setEditingSection(null)}>Salvar</Button>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+              {profileData.about || 'Adicione informações sobre você.'}
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
-        {/* Estatísticas Gerais UATI */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <Card className="border border-white/10 bg-transparent">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
-                  <GraduationCap className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-white">{curriculumStats.total}</div>
-                  <div className="text-xs text-muted-foreground">Matérias</div>
-                </div>
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {curriculumStats.completed} concluídas • {curriculumStats.active} ativas
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border border-white/10 bg-transparent">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                  <BookOpen className="h-4 w-4 text-blue-400" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-white">{resourcesStats.total}</div>
-                  <div className="text-xs text-muted-foreground">Recursos</div>
-                </div>
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {resourcesStats.completed} concluídos • {resourcesStats.reading} lendo
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border border-white/10 bg-transparent">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 rounded-lg bg-green-500/10 border border-green-500/20">
-                  <Zap className="h-4 w-4 text-green-400" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-white">{flashcardsStats.total}</div>
-                  <div className="text-xs text-muted-foreground">Flashcards</div>
-                </div>
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {flashcardsStats.decks} decks • {flashcardsStats.due} para revisar
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border border-white/10 bg-transparent">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                  <Clock3 className="h-4 w-4 text-purple-400" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-white">{sessionsStats.totalHours.toFixed(1)}</div>
-                  <div className="text-xs text-muted-foreground">Horas Estudadas</div>
-                </div>
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {sessionsStats.total} sessões • {sessionsStats.thisWeek} esta semana
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Matérias Cursadas */}
-        {curriculumStats.total > 0 && (
-          <Card className="border border-white/10 bg-transparent mb-6">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                  <Layers className="h-5 w-5 text-primary" />
-                  Matérias Cursadas
-                </h3>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate('/curriculum')}
-                  className="border-white/10 hover:bg-white/5"
-                >
-                  Ver Todas
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </div>
-
-              {/* Matérias Concluídas */}
-              {curriculumByStatus.completed.length > 0 && (
-                <div className="mb-4">
-                  <h4 className="text-sm font-semibold text-green-400 mb-3 flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4" />
-                    Concluídas ({curriculumByStatus.completed.length})
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {curriculumByStatus.completed.slice(0, 4).map((subject) => (
-                      <div key={subject.id} className="p-3 rounded-lg border border-green-500/20 bg-green-500/[0.02]">
-                        <div className="flex items-center justify-between mb-2">
-                          <div>
-                            <h5 className="text-sm font-semibold text-white">{subject.title}</h5>
-                            <p className="text-xs text-muted-foreground">{subject.code}</p>
-                          </div>
-                          <span className="text-xs font-bold text-green-400">100%</span>
-                        </div>
-                        {subject.block && (
-                          <p className="text-xs text-muted-foreground">{subject.block}</p>
-                        )}
+      {/* Experiência */}
+      <Card className="border border-white/10 bg-transparent">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              <Briefcase className="h-5 w-5 text-primary" />
+              Experiência
+            </h3>
+            <Button variant="outline" size="sm" onClick={handleAddExperience}>
+              <Plus className="h-4 w-4 mr-2" />
+              Adicionar experiência
+            </Button>
+          </div>
+          <div className="space-y-6">
+            {profileData.experiences.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhuma experiência adicionada ainda.</p>
+            ) : (
+              profileData.experiences.map((exp) => (
+                <div key={exp.id} className="border-l-2 border-white/10 pl-4">
+                  {editingSection === `exp-${exp.id}` ? (
+                    <div className="space-y-3">
+                      <Input
+                        placeholder="Título/Cargo"
+                        value={exp.title}
+                        onChange={(e) => handleUpdateExperience(exp.id, { title: e.target.value })}
+                      />
+                      <Input
+                        placeholder="Empresa/Instituição"
+                        value={exp.company}
+                        onChange={(e) => handleUpdateExperience(exp.id, { company: e.target.value })}
+                      />
+                      <div className="grid grid-cols-2 gap-3">
+                        <select
+                          value={exp.type}
+                          onChange={(e) => handleUpdateExperience(exp.id, { type: e.target.value as any })}
+                          className="rounded-lg border border-white/10 bg-white/5 p-2 text-sm text-white"
+                        >
+                          <option value="professional">Profissional</option>
+                          <option value="academic">Acadêmica</option>
+                          <option value="internship">Estágio</option>
+                          <option value="research">Pesquisa</option>
+                        </select>
+                        <Input
+                          placeholder="Localização"
+                          value={exp.location || ''}
+                          onChange={(e) => handleUpdateExperience(exp.id, { location: e.target.value })}
+                        />
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Matérias Ativas */}
-              {curriculumByStatus.active.length > 0 && (
-                <div className="mb-4">
-                  <h4 className="text-sm font-semibold text-primary mb-3 flex items-center gap-2">
-                    <PlayCircle className="h-4 w-4" />
-                    Em Andamento ({curriculumByStatus.active.length})
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {curriculumByStatus.active.slice(0, 4).map((subject) => (
-                      <div key={subject.id} className="p-3 rounded-lg border border-white/5 bg-white/[0.02]">
-                        <div className="flex items-center justify-between mb-2">
-                          <div>
-                            <h5 className="text-sm font-semibold text-white">{subject.title}</h5>
-                            <p className="text-xs text-muted-foreground">{subject.code}</p>
-                          </div>
-                          <span className="text-xs font-bold text-primary">{subject.progress}%</span>
-                        </div>
-                        <div className="relative w-full bg-white/10 h-1 rounded-full overflow-hidden mt-2">
-                          <div
-                            className="absolute inset-y-0 left-0 bg-primary rounded-full"
-                            style={{ width: `${subject.progress}%` }}
-                          />
-                        </div>
-                        {subject.block && (
-                          <p className="text-xs text-muted-foreground mt-2">{subject.block}</p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Recursos Estudados */}
-        {resourcesStats.total > 0 && (
-          <Card className="border border-white/10 bg-transparent mb-6">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                  <BookOpen className="h-5 w-5 text-primary" />
-                  Recursos Estudados
-                </h3>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate('/resources')}
-                  className="border-white/10 hover:bg-white/5"
-                >
-                  Ver Todos
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                <div className="p-3 rounded-lg border border-white/5 bg-white/[0.02] text-center">
-                  <BookMarked className="h-5 w-5 text-blue-400 mx-auto mb-1" />
-                  <div className="text-lg font-bold text-white">{resourcesStats.byFormat.livro}</div>
-                  <div className="text-xs text-muted-foreground">Livros</div>
-                </div>
-                <div className="p-3 rounded-lg border border-white/5 bg-white/[0.02] text-center">
-                  <Video className="h-5 w-5 text-red-400 mx-auto mb-1" />
-                  <div className="text-lg font-bold text-white">{resourcesStats.byFormat.video}</div>
-                  <div className="text-xs text-muted-foreground">Vídeos</div>
-                </div>
-                <div className="p-3 rounded-lg border border-white/5 bg-white/[0.02] text-center">
-                  <File className="h-5 w-5 text-yellow-400 mx-auto mb-1" />
-                  <div className="text-lg font-bold text-white">{resourcesStats.byFormat.pdf}</div>
-                  <div className="text-xs text-muted-foreground">PDFs</div>
-                </div>
-                <div className="p-3 rounded-lg border border-white/5 bg-white/[0.02] text-center">
-                  <PlayCircle className="h-5 w-5 text-green-400 mx-auto mb-1" />
-                  <div className="text-lg font-bold text-white">{resourcesStats.byFormat.audio}</div>
-                  <div className="text-xs text-muted-foreground">Áudios</div>
-                </div>
-              </div>
-
-              {topResources.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-semibold text-white mb-3">Recursos Mais Estudados</h4>
-                  <div className="space-y-2">
-                    {topResources.map((resource) => (
-                      <div key={resource.id} className="p-3 rounded-lg border border-white/5 bg-white/[0.02]">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex-1">
-                            <h5 className="text-sm font-semibold text-white">{resource.title}</h5>
-                            {resource.author && (
-                              <p className="text-xs text-muted-foreground">{resource.author}</p>
-                            )}
-                          </div>
-                          <span className="text-xs font-bold text-primary">{resource.progress || 0}%</span>
-                        </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <Input
+                          type="month"
+                          placeholder="Data início"
+                          value={exp.startDate}
+                          onChange={(e) => handleUpdateExperience(exp.id, { startDate: e.target.value })}
+                        />
                         <div className="flex items-center gap-2">
-                          <span className={cn(
-                            "text-xs px-2 py-1 rounded-full",
-                            resource.format === 'Livro' ? "bg-blue-500/20 text-blue-400" :
-                            resource.format === 'Video' ? "bg-red-500/20 text-red-400" :
-                            resource.format === 'PDF' ? "bg-yellow-500/20 text-yellow-400" :
-                            "bg-green-500/20 text-green-400"
-                          )}>
-                            {resource.format}
-                          </span>
-                          <div className="flex-1 relative bg-white/10 h-1 rounded-full overflow-hidden">
-                            <div
-                              className="absolute inset-y-0 left-0 bg-primary rounded-full"
-                              style={{ width: `${resource.progress || 0}%` }}
+                          <Input
+                            type="month"
+                            placeholder="Data fim"
+                            value={exp.endDate}
+                            onChange={(e) => handleUpdateExperience(exp.id, { endDate: e.target.value })}
+                            disabled={exp.current}
+                            className="flex-1"
+                          />
+                          <label className="flex items-center gap-2 text-xs text-muted-foreground whitespace-nowrap">
+                            <input
+                              type="checkbox"
+                              checked={exp.current}
+                              onChange={(e) => handleUpdateExperience(exp.id, { current: e.target.checked })}
+                              className="rounded"
                             />
-                          </div>
+                            Atual
+                          </label>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Atividades Recentes */}
-        {activities.length > 0 && (
-          <Card className="border border-white/10 bg-transparent">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                  <Activity className="h-5 w-5 text-primary" />
-                  Atividades Recentes
-                </h3>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate('/activities')}
-                  className="border-white/10 hover:bg-white/5"
-                >
-                  Ver Todas
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </div>
-              <div className="space-y-2">
-                {activities.slice(0, 5).map((activity) => (
-                  <div key={activity.id} className="p-3 rounded-lg border border-white/5 bg-white/[0.02]">
-                    <div className="flex items-start gap-3">
-                      <div className="p-1.5 rounded-lg bg-primary/10 border border-primary/20">
-                        <Activity className="h-3 w-3 text-primary" />
-                      </div>
-                      <div className="flex-1">
-                        <h5 className="text-sm font-semibold text-white">{activity.title}</h5>
-                        {activity.description && (
-                          <p className="text-xs text-muted-foreground mt-1">{activity.description}</p>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {new Date(activity.createdAt).toLocaleDateString('pt-BR', {
-                            day: '2-digit',
-                            month: 'short',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </p>
+                      <textarea
+                        placeholder="Descrição das responsabilidades e conquistas..."
+                        value={exp.description}
+                        onChange={(e) => handleUpdateExperience(exp.id, { description: e.target.value })}
+                        className="w-full min-h-[100px] rounded-lg border border-white/10 bg-white/5 p-3 text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/30"
+                      />
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={() => setEditingSection(null)}>Salvar</Button>
+                        <Button size="sm" variant="ghost" onClick={() => handleDeleteExperience(exp.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </motion.div>
-
-      {/* Biografia e Objetivo */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="border border-white/10 bg-transparent">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                <FileText className="h-5 w-5 text-primary" />
-                Biografia
-              </h3>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setEditingSection(editingSection === 'bio' ? null : 'bio')}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-            </div>
-            {editingSection === 'bio' ? (
-              <div className="space-y-3">
-                <textarea
-                  value={profileData.bio}
-                  onChange={(e) => saveProfileData({ ...profileData, bio: e.target.value })}
-                  placeholder="Escreva uma breve biografia sobre você..."
-                  className="w-full min-h-[120px] rounded-lg border border-white/10 bg-white/5 p-3 text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/30"
-                />
-                <Button size="sm" onClick={() => setEditingSection(null)}>Salvar</Button>
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                {profileData.bio || 'Adicione uma biografia para seu perfil.'}
-              </p>
+                  ) : (
+                    <div>
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <h4 className="text-base font-semibold text-white">{exp.title || 'Sem título'}</h4>
+                          <p className="text-sm text-muted-foreground">{exp.company}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {exp.startDate && new Date(exp.startDate).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}
+                            {exp.startDate && (exp.endDate || exp.current) && ' - '}
+                            {exp.current ? 'Atual' : exp.endDate && new Date(exp.endDate).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}
+                            {exp.location && ` • ${exp.location}`}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button variant="ghost" size="sm" onClick={() => setEditingSection(`exp-${exp.id}`)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleDeleteExperience(exp.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      {exp.description && (
+                        <p className="text-sm text-muted-foreground mt-2 whitespace-pre-wrap">{exp.description}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </CardContent>
+      </Card>
 
-        <Card className="border border-white/10 bg-transparent">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                <Target className="h-5 w-5 text-primary" />
-                Objetivo Profissional
-              </h3>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setEditingSection(editingSection === 'objective' ? null : 'objective')}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-            </div>
-            {editingSection === 'objective' ? (
-              <div className="space-y-3">
-                <textarea
-                  value={profileData.objective}
-                  onChange={(e) => saveProfileData({ ...profileData, objective: e.target.value })}
-                  placeholder="Descreva seus objetivos profissionais..."
-                  className="w-full min-h-[120px] rounded-lg border border-white/10 bg-white/5 p-3 text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/30"
-                />
-                <Button size="sm" onClick={() => setEditingSection(null)}>Salvar</Button>
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                {profileData.objective || 'Adicione seus objetivos profissionais.'}
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Informações Acadêmicas */}
+      {/* Educação */}
       <Card className="border border-white/10 bg-transparent">
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-white flex items-center gap-2">
               <GraduationCap className="h-5 w-5 text-primary" />
-              Formação Acadêmica
+              Educação
             </h3>
             <Button
               variant="ghost"
@@ -1035,47 +795,47 @@ export default function Profile() {
           </div>
           {editingSection === 'academic' ? (
             <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                placeholder="Escola/Universidade"
+                value={profileData.academicInfo?.university || ''}
+                onChange={(e) => saveProfileData({
+                  ...profileData,
+                  academicInfo: { ...(profileData.academicInfo || {} as AcademicInfo), university: e.target.value } as AcademicInfo,
+                })}
+              />
+              <Input
+                placeholder="Curso/Grau"
+                value={profileData.academicInfo?.course || ''}
+                onChange={(e) => saveProfileData({
+                  ...profileData,
+                  academicInfo: { ...(profileData.academicInfo || {} as AcademicInfo), course: e.target.value } as AcademicInfo,
+                })}
+              />
+              <div className="grid grid-cols-2 gap-3">
                 <Input
-                  placeholder="Universidade"
-                  value={profileData.academicInfo?.university || ''}
-                  onChange={(e) => saveProfileData({
-                    ...profileData,
-                    academicInfo: { ...(profileData.academicInfo || {} as AcademicInfo), university: e.target.value } as AcademicInfo,
-                  })}
-                />
-                <Input
-                  placeholder="Curso"
-                  value={profileData.academicInfo?.course || ''}
-                  onChange={(e) => saveProfileData({
-                    ...profileData,
-                    academicInfo: { ...(profileData.academicInfo || {} as AcademicInfo), course: e.target.value } as AcademicInfo,
-                  })}
-                />
-                <Input
-                  placeholder="Período (ex: 5º período)"
+                  placeholder="Período/Ano"
                   value={profileData.academicInfo?.period || ''}
                   onChange={(e) => saveProfileData({
                     ...profileData,
                     academicInfo: { ...(profileData.academicInfo || {} as AcademicInfo), period: e.target.value } as AcademicInfo,
                   })}
                 />
-                <div className="flex items-center gap-2">
-                  <select
-                    value={profileData.academicInfo?.status || 'studying'}
-                    onChange={(e) => saveProfileData({
-                      ...profileData,
-                      academicInfo: { ...(profileData.academicInfo || {} as AcademicInfo), status: e.target.value as any } as AcademicInfo,
-                    })}
-                    className="flex-1 rounded-lg border border-white/10 bg-white/5 p-2 text-sm text-white"
-                  >
-                    <option value="studying">Cursando</option>
-                    <option value="completed">Concluído</option>
-                    <option value="paused">Trancado</option>
-                  </select>
-                </div>
+                <select
+                  value={profileData.academicInfo?.status || 'studying'}
+                  onChange={(e) => saveProfileData({
+                    ...profileData,
+                    academicInfo: { ...(profileData.academicInfo || {} as AcademicInfo), status: e.target.value as any } as AcademicInfo,
+                  })}
+                  className="rounded-lg border border-white/10 bg-white/5 p-2 text-sm text-white"
+                >
+                  <option value="studying">Cursando</option>
+                  <option value="completed">Concluído</option>
+                  <option value="paused">Trancado</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
                 <Input
-                  type="date"
+                  type="month"
                   placeholder="Data de início"
                   value={profileData.academicInfo?.startDate || ''}
                   onChange={(e) => saveProfileData({
@@ -1084,7 +844,7 @@ export default function Profile() {
                   })}
                 />
                 <Input
-                  type="date"
+                  type="month"
                   placeholder="Data de término"
                   value={profileData.academicInfo?.endDate || ''}
                   onChange={(e) => saveProfileData({
@@ -1093,6 +853,23 @@ export default function Profile() {
                   })}
                 />
               </div>
+              <Input
+                placeholder="GPA/Nota (opcional)"
+                value={profileData.academicInfo?.gpa || ''}
+                onChange={(e) => saveProfileData({
+                  ...profileData,
+                  academicInfo: { ...(profileData.academicInfo || {} as AcademicInfo), gpa: e.target.value } as AcademicInfo,
+                })}
+              />
+              <textarea
+                placeholder="Descrição, atividades, conquistas..."
+                value={profileData.academicInfo?.description || ''}
+                onChange={(e) => saveProfileData({
+                  ...profileData,
+                  academicInfo: { ...(profileData.academicInfo || {} as AcademicInfo), description: e.target.value } as AcademicInfo,
+                })}
+                className="w-full min-h-[80px] rounded-lg border border-white/10 bg-white/5 p-3 text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/30"
+              />
               <Button size="sm" onClick={() => setEditingSection(null)}>Salvar</Button>
             </div>
           ) : (
@@ -1105,98 +882,87 @@ export default function Profile() {
                   </div>
                   <p className="text-sm text-muted-foreground">{profileData.academicInfo.university}</p>
                   <p className="text-sm text-muted-foreground">
-                    {profileData.academicInfo.period} • {profileData.academicInfo.status === 'studying' ? 'Cursando' : profileData.academicInfo.status === 'completed' ? 'Concluído' : 'Trancado'}
+                    {profileData.academicInfo.period}
+                    {profileData.academicInfo.gpa && ` • GPA: ${profileData.academicInfo.gpa}`}
                   </p>
-                  {(profileData.academicInfo.startDate || profileData.academicInfo.endDate) && (
-                    <p className="text-xs text-muted-foreground">
-                      {profileData.academicInfo.startDate && new Date(profileData.academicInfo.startDate).getFullYear()}
-                      {profileData.academicInfo.startDate && profileData.academicInfo.endDate && ' - '}
-                      {profileData.academicInfo.endDate && new Date(profileData.academicInfo.endDate).getFullYear()}
-                    </p>
+                  <p className="text-xs text-muted-foreground">
+                    {profileData.academicInfo.startDate && new Date(profileData.academicInfo.startDate).getFullYear()}
+                    {profileData.academicInfo.startDate && profileData.academicInfo.endDate && ' - '}
+                    {profileData.academicInfo.endDate && new Date(profileData.academicInfo.endDate).getFullYear()}
+                    {profileData.academicInfo.status === 'studying' && ' • Cursando'}
+                    {profileData.academicInfo.status === 'completed' && ' • Concluído'}
+                    {profileData.academicInfo.status === 'paused' && ' • Trancado'}
+                  </p>
+                  {profileData.academicInfo.description && (
+                    <p className="text-sm text-muted-foreground mt-2 whitespace-pre-wrap">{profileData.academicInfo.description}</p>
                   )}
                 </>
               ) : (
-                <p className="text-sm text-muted-foreground">Adicione suas informações acadêmicas.</p>
+                <p className="text-sm text-muted-foreground">Adicione suas informações educacionais.</p>
               )}
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Experiências */}
+      {/* Licenças e Certificações */}
       <Card className="border border-white/10 bg-transparent">
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-              <Briefcase className="h-5 w-5 text-primary" />
-              Experiências
+              <Award className="h-5 w-5 text-primary" />
+              Licenças e Certificações
             </h3>
-            <Button variant="outline" size="sm" onClick={handleAddExperience}>
+            <Button variant="outline" size="sm" onClick={handleAddCertification}>
               <Plus className="h-4 w-4 mr-2" />
-              Adicionar
+              Adicionar certificação
             </Button>
           </div>
           <div className="space-y-4">
-            {profileData.experiences.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhuma experiência adicionada ainda.</p>
+            {profileData.certifications.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhuma certificação adicionada ainda.</p>
             ) : (
-              profileData.experiences.map((exp) => (
-                <div key={exp.id} className="p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-                  {editingSection === `exp-${exp.id}` ? (
+              profileData.certifications.map((cert) => (
+                <div key={cert.id} className="border-l-2 border-white/10 pl-4">
+                  {editingSection === `cert-${cert.id}` ? (
                     <div className="space-y-3">
+                      <Input
+                        placeholder="Nome da certificação"
+                        value={cert.name}
+                        onChange={(e) => handleUpdateCertification(cert.id, { name: e.target.value })}
+                      />
+                      <Input
+                        placeholder="Organização emissora"
+                        value={cert.issuer}
+                        onChange={(e) => handleUpdateCertification(cert.id, { issuer: e.target.value })}
+                      />
                       <div className="grid grid-cols-2 gap-3">
                         <Input
-                          placeholder="Título/Cargo"
-                          value={exp.title}
-                          onChange={(e) => handleUpdateExperience(exp.id, { title: e.target.value })}
+                          type="month"
+                          placeholder="Data de emissão"
+                          value={cert.date}
+                          onChange={(e) => handleUpdateCertification(cert.id, { date: e.target.value })}
                         />
                         <Input
-                          placeholder="Empresa/Instituição"
-                          value={exp.company}
-                          onChange={(e) => handleUpdateExperience(exp.id, { company: e.target.value })}
-                        />
-                        <select
-                          value={exp.type}
-                          onChange={(e) => handleUpdateExperience(exp.id, { type: e.target.value as any })}
-                          className="rounded-lg border border-white/10 bg-white/5 p-2 text-sm text-white"
-                        >
-                          <option value="academic">Acadêmica</option>
-                          <option value="professional">Profissional</option>
-                          <option value="internship">Estágio</option>
-                          <option value="research">Pesquisa</option>
-                        </select>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={exp.current}
-                            onChange={(e) => handleUpdateExperience(exp.id, { current: e.target.checked })}
-                            className="rounded"
-                          />
-                          <span className="text-xs text-muted-foreground">Atual</span>
-                        </div>
-                        <Input
-                          type="date"
-                          placeholder="Data início"
-                          value={exp.startDate}
-                          onChange={(e) => handleUpdateExperience(exp.id, { startDate: e.target.value })}
-                        />
-                        <Input
-                          type="date"
-                          placeholder="Data fim"
-                          value={exp.endDate}
-                          onChange={(e) => handleUpdateExperience(exp.id, { endDate: e.target.value })}
-                          disabled={exp.current}
+                          type="month"
+                          placeholder="Data de expiração (opcional)"
+                          value={cert.expiryDate || ''}
+                          onChange={(e) => handleUpdateCertification(cert.id, { expiryDate: e.target.value })}
                         />
                       </div>
-                      <textarea
-                        placeholder="Descrição"
-                        value={exp.description}
-                        onChange={(e) => handleUpdateExperience(exp.id, { description: e.target.value })}
-                        className="w-full min-h-[80px] rounded-lg border border-white/10 bg-white/5 p-3 text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/30"
+                      <Input
+                        placeholder="ID da credencial (opcional)"
+                        value={cert.credentialId || ''}
+                        onChange={(e) => handleUpdateCertification(cert.id, { credentialId: e.target.value })}
+                      />
+                      <Input
+                        placeholder="Link (opcional)"
+                        value={cert.link || ''}
+                        onChange={(e) => handleUpdateCertification(cert.id, { link: e.target.value })}
                       />
                       <div className="flex gap-2">
                         <Button size="sm" onClick={() => setEditingSection(null)}>Salvar</Button>
-                        <Button size="sm" variant="ghost" onClick={() => handleDeleteExperience(exp.id)}>
+                        <Button size="sm" variant="ghost" onClick={() => handleDeleteCertification(cert.id)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -1204,25 +970,32 @@ export default function Profile() {
                   ) : (
                     <div>
                       <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <h4 className="text-sm font-semibold text-white">{exp.title || 'Sem título'}</h4>
-                          <p className="text-xs text-muted-foreground">{exp.company}</p>
+                        <div className="flex-1">
+                          <h4 className="text-base font-semibold text-white">{cert.name}</h4>
+                          <p className="text-sm text-muted-foreground">{cert.issuer}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {cert.date && new Date(cert.date).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}
+                            {cert.expiryDate && ` - ${new Date(cert.expiryDate).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}`}
+                            {!cert.expiryDate && cert.date && ' • Sem expiração'}
+                          </p>
+                          {cert.credentialId && (
+                            <p className="text-xs text-muted-foreground">ID: {cert.credentialId}</p>
+                          )}
+                          {cert.link && (
+                            <a href={cert.link} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1 mt-1">
+                              Ver credencial <ExternalLink className="h-3 w-3" />
+                            </a>
+                          )}
                         </div>
                         <div className="flex gap-2">
-                          <Button variant="ghost" size="sm" onClick={() => setEditingSection(`exp-${exp.id}`)}>
+                          <Button variant="ghost" size="sm" onClick={() => setEditingSection(`cert-${cert.id}`)}>
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleDeleteExperience(exp.id)}>
+                          <Button variant="ghost" size="sm" onClick={() => handleDeleteCertification(cert.id)}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
-                      <p className="text-xs text-muted-foreground mb-1">
-                        {exp.startDate && new Date(exp.startDate).toLocaleDateString('pt-BR')}
-                        {exp.startDate && exp.endDate && ' - '}
-                        {exp.current ? 'Atual' : exp.endDate && new Date(exp.endDate).toLocaleDateString('pt-BR')}
-                      </p>
-                      {exp.description && <p className="text-xs text-muted-foreground mt-2">{exp.description}</p>}
                     </div>
                   )}
                 </div>
@@ -1232,90 +1005,47 @@ export default function Profile() {
         </CardContent>
       </Card>
 
-      {/* Competências Sincronizadas */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <p className="text-xs font-mono uppercase tracking-[0.3em] text-primary mb-1">Competências</p>
-            <h2 className="text-xl font-serif font-light text-white">Mapa de Competências</h2>
+      {/* Competências */}
+      <Card className="border border-white/10 bg-transparent">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              <Brain className="h-5 w-5 text-primary" />
+              Competências
+            </h3>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/paradigms')}
+              className="border-white/10 hover:bg-white/5"
+            >
+              Gerenciar
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate('/paradigms')}
-            className="border-white/10 hover:bg-white/5"
-          >
-            Ver Mapa Completo
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </div>
-
-        {loadingCompetences ? (
-          <Card className="border border-white/10 bg-transparent">
-            <CardContent className="p-8 text-center">
+          {loadingCompetences ? (
+            <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            </CardContent>
-          </Card>
-        ) : competences.length === 0 ? (
-          <Card className="border border-white/10 bg-transparent">
-            <CardContent className="p-8 text-center">
-              <Brain className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-              <p className="text-muted-foreground mb-4">Nenhuma competência registrada ainda.</p>
-              <Button
-                variant="outline"
-                onClick={() => navigate('/paradigms')}
-                className="border-white/10 hover:bg-white/5"
-              >
-                Adicionar Competências
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-6">
-            {topCompetences.length > 0 && (
-              <Card className="border border-white/10 bg-transparent">
-                <CardContent className="p-6">
-                  <h3 className="text-sm font-semibold text-white mb-4">Principais Competências</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {topCompetences.map((comp, index) => {
-                      const percentage = levelToPercentage(comp.currentLevel);
-                      return (
-                        <motion.div
-                          key={comp.id}
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: index * 0.05 }}
-                          className="p-4 rounded-lg border border-white/5 bg-white/[0.02] hover:border-white/10 transition-all"
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="text-sm font-semibold text-white">{comp.name}</h4>
-                            <span className="text-xs font-bold text-primary">{comp.currentLevel}/12</span>
-                          </div>
-                          <div className="relative w-full bg-white/10 h-1.5 rounded-full overflow-hidden mb-2">
-                            <motion.div
-                              initial={{ width: 0 }}
-                              animate={{ width: `${percentage}%` }}
-                              transition={{ delay: index * 0.05 + 0.2, duration: 0.6 }}
-                              className="absolute inset-y-0 left-0 bg-primary rounded-full"
-                            />
-                          </div>
-                          {comp.category && (
-                            <p className="text-xs text-muted-foreground">{comp.category}</p>
-                          )}
-                        </motion.div>
-                      );
-                    })}
+            </div>
+          ) : topCompetences.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhuma competência registrada ainda.</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {topCompetences.map((comp) => (
+                <div
+                  key={comp.id}
+                  className="px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.02] hover:border-primary/30 transition-all"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-white">{comp.name}</span>
+                    <span className="text-xs text-muted-foreground">({comp.currentLevel}/12)</span>
                   </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        )}
-      </motion.div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Idiomas */}
       <Card className="border border-white/10 bg-transparent">
@@ -1327,7 +1057,7 @@ export default function Profile() {
             </h3>
             <Button variant="outline" size="sm" onClick={handleAddLanguage}>
               <Plus className="h-4 w-4 mr-2" />
-              Adicionar
+              Adicionar idioma
             </Button>
           </div>
           <div className="space-y-3">
@@ -1364,7 +1094,7 @@ export default function Profile() {
                       <div>
                         <span className="text-sm font-semibold text-white">{lang.name}</span>
                         <span className="text-xs text-muted-foreground ml-2">
-                          ({lang.level === 'basic' ? 'Básico' : lang.level === 'intermediate' ? 'Intermediário' : lang.level === 'advanced' ? 'Avançado' : 'Nativo'})
+                          • {lang.level === 'basic' ? 'Básico' : lang.level === 'intermediate' ? 'Intermediário' : lang.level === 'advanced' ? 'Avançado' : 'Nativo'}
                         </span>
                       </div>
                       <div className="flex gap-2">
@@ -1384,107 +1114,90 @@ export default function Profile() {
         </CardContent>
       </Card>
 
-      {/* Certificações */}
-      <Card className="border border-white/10 bg-transparent">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-              <Award className="h-5 w-5 text-primary" />
-              Certificações
-            </h3>
-            <Button variant="outline" size="sm" onClick={handleAddCertification}>
-              <Plus className="h-4 w-4 mr-2" />
-              Adicionar
-            </Button>
-          </div>
-          <div className="space-y-3">
-            {profileData.certifications.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhuma certificação adicionada ainda.</p>
-            ) : (
-              profileData.certifications.map((cert) => (
-                <div key={cert.id} className="p-3 rounded-lg border border-white/5 bg-white/[0.02]">
-                  {editingSection === `cert-${cert.id}` ? (
-                    <div className="space-y-3">
-                      <Input
-                        placeholder="Nome da certificação"
-                        value={cert.name}
-                        onChange={(e) => handleUpdateCertification(cert.id, { name: e.target.value })}
-                      />
-                      <Input
-                        placeholder="Emissor"
-                        value={cert.issuer}
-                        onChange={(e) => handleUpdateCertification(cert.id, { issuer: e.target.value })}
-                      />
-                      <Input
-                        type="date"
-                        placeholder="Data"
-                        value={cert.date}
-                        onChange={(e) => handleUpdateCertification(cert.id, { date: e.target.value })}
-                      />
-                      <Input
-                        placeholder="Link (opcional)"
-                        value={cert.link || ''}
-                        onChange={(e) => handleUpdateCertification(cert.id, { link: e.target.value })}
-                      />
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={() => setEditingSection(null)}>Salvar</Button>
-                        <Button size="sm" variant="ghost" onClick={() => handleDeleteCertification(cert.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+      {/* Projetos */}
+      {(activeProjects.length > 0 || completedProjects.length > 0) && (
+        <Card className="border border-white/10 bg-transparent">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <Code className="h-5 w-5 text-primary" />
+                Projetos
+              </h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/projects')}
+                className="border-white/10 hover:bg-white/5"
+              >
+                Ver todos
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+            <div className="space-y-4">
+              {[...activeProjects.slice(0, 3), ...completedProjects.slice(0, 3)].map((project) => (
+                <div key={project.id} className="border-l-2 border-white/10 pl-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
+                      <h4 className="text-base font-semibold text-white">{project.title}</h4>
+                      {project.description && (
+                        <p className="text-sm text-muted-foreground mt-1">{project.description}</p>
+                      )}
+                      {project.technologies && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {(Array.isArray(project.technologies) ? project.technologies : [project.technologies]).map((tech, idx) => (
+                            <span
+                              key={idx}
+                              className="px-2 py-1 rounded-lg bg-primary/10 text-xs text-primary border border-primary/20"
+                            >
+                              {tech}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  ) : (
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h4 className="text-sm font-semibold text-white">{cert.name}</h4>
-                        <p className="text-xs text-muted-foreground">{cert.issuer}</p>
-                        {cert.date && (
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(cert.date).toLocaleDateString('pt-BR')}
-                          </p>
-                        )}
-                        {cert.link && (
-                          <a href={cert.link} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1 mt-1">
-                            Ver certificado <ExternalLink className="h-3 w-3" />
-                          </a>
-                        )}
-                      </div>
-                      <div className="flex gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => setEditingSection(`cert-${cert.id}`)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDeleteCertification(cert.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
+                    <span className={cn(
+                      "text-xs font-bold px-2 py-1 rounded-full",
+                      project.status === 'completed' || project.progress === 100
+                        ? "bg-green-500/20 text-green-400"
+                        : "bg-primary/20 text-primary"
+                    )}>
+                      {project.status === 'completed' || project.progress === 100 ? 'Concluído' : `${project.progress}%`}
+                    </span>
+                  </div>
+                  {project.repository && (
+                    <a
+                      href={project.repository}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-primary hover:underline flex items-center gap-1 mt-2"
+                    >
+                      Ver repositório <ExternalLink className="h-3 w-3" />
+                    </a>
                   )}
                 </div>
-              ))
-            )}
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Publicações */}
-      <Card className="border border-white/10 bg-transparent">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" />
-              Publicações
-            </h3>
-            <Button variant="outline" size="sm" onClick={handleAddPublication}>
-              <Plus className="h-4 w-4 mr-2" />
-              Adicionar
-            </Button>
-          </div>
-          <div className="space-y-3">
-            {profileData.publications.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhuma publicação adicionada ainda.</p>
-            ) : (
-              profileData.publications.map((pub) => (
-                <div key={pub.id} className="p-3 rounded-lg border border-white/5 bg-white/[0.02]">
+      {profileData.publications.length > 0 && (
+        <Card className="border border-white/10 bg-transparent">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" />
+                Publicações
+              </h3>
+              <Button variant="outline" size="sm" onClick={handleAddPublication}>
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar publicação
+              </Button>
+            </div>
+            <div className="space-y-4">
+              {profileData.publications.map((pub) => (
+                <div key={pub.id} className="border-l-2 border-white/10 pl-4">
                   {editingSection === `pub-${pub.id}` ? (
                     <div className="space-y-3">
                       <Input
@@ -1504,7 +1217,7 @@ export default function Profile() {
                           <option value="book">Livro</option>
                         </select>
                         <Input
-                          type="date"
+                          type="month"
                           placeholder="Data"
                           value={pub.date}
                           onChange={(e) => handleUpdatePublication(pub.id, { date: e.target.value })}
@@ -1514,6 +1227,11 @@ export default function Profile() {
                         placeholder="Local/Venue"
                         value={pub.venue}
                         onChange={(e) => handleUpdatePublication(pub.id, { venue: e.target.value })}
+                      />
+                      <Input
+                        placeholder="Autores (opcional)"
+                        value={pub.authors || ''}
+                        onChange={(e) => handleUpdatePublication(pub.id, { authors: e.target.value })}
                       />
                       <Input
                         placeholder="Link (opcional)"
@@ -1528,100 +1246,61 @@ export default function Profile() {
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h4 className="text-sm font-semibold text-white">{pub.title}</h4>
-                        <p className="text-xs text-muted-foreground">
-                          {pub.type === 'article' ? 'Artigo' : pub.type === 'paper' ? 'Paper' : pub.type === 'poster' ? 'Poster' : 'Livro'} • {pub.venue}
-                        </p>
-                        {pub.date && (
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(pub.date).toLocaleDateString('pt-BR')}
+                    <div>
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <h4 className="text-base font-semibold text-white">{pub.title}</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {pub.type === 'article' ? 'Artigo' : pub.type === 'paper' ? 'Paper' : pub.type === 'poster' ? 'Poster' : 'Livro'} • {pub.venue}
                           </p>
-                        )}
-                        {pub.link && (
-                          <a href={pub.link} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1 mt-1">
-                            Ver publicação <ExternalLink className="h-3 w-3" />
-                          </a>
-                        )}
-                      </div>
-                      <div className="flex gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => setEditingSection(`pub-${pub.id}`)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDeletePublication(pub.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                          {pub.authors && (
+                            <p className="text-xs text-muted-foreground mt-1">Autores: {pub.authors}</p>
+                          )}
+                          {pub.date && (
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(pub.date).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}
+                            </p>
+                          )}
+                          {pub.link && (
+                            <a href={pub.link} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1 mt-1">
+                              Ver publicação <ExternalLink className="h-3 w-3" />
+                            </a>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button variant="ghost" size="sm" onClick={() => setEditingSection(`pub-${pub.id}`)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleDeletePublication(pub.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   )}
                 </div>
-              ))
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Projetos */}
-      {(activeProjects.length > 0 || completedProjects.length > 0) && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <p className="text-xs font-mono uppercase tracking-[0.3em] text-primary mb-1">Projetos</p>
-              <h2 className="text-xl font-serif font-light text-white">Portfólio de Projetos</h2>
+              ))}
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate('/projects')}
-              className="border-white/10 hover:bg-white/5"
-            >
-              Ver Todos
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </div>
+          </CardContent>
+        </Card>
+      )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {activeProjects.slice(0, 2).map((project, index) => (
-              <motion.div
-                key={project.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="p-4 rounded-lg border border-white/10 bg-white/[0.02] hover:border-white/20 transition-all"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-semibold text-white">{project.title}</h3>
-                  <span className="text-xs font-bold text-primary">{project.progress}%</span>
-                </div>
-                <div className="relative w-full bg-white/10 h-1 rounded-full overflow-hidden">
-                  <div
-                    className="absolute inset-y-0 left-0 bg-primary rounded-full"
-                    style={{ width: `${project.progress}%` }}
-                  />
-                </div>
-              </motion.div>
-            ))}
-            {completedProjects.slice(0, 2).map((project, index) => (
-              <motion.div
-                key={project.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: (activeProjects.length + index) * 0.1 }}
-                className="p-4 rounded-lg border border-green-500/20 bg-green-500/[0.02] hover:border-green-500/30 transition-all"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-semibold text-white">{project.title}</h3>
-                  <span className="text-xs font-bold text-green-400">Concluído</span>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
+      {/* Botão para adicionar publicação se não houver nenhuma */}
+      {profileData.publications.length === 0 && (
+        <Card className="border border-white/10 bg-transparent">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" />
+                Publicações
+              </h3>
+              <Button variant="outline" size="sm" onClick={handleAddPublication}>
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar publicação
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
