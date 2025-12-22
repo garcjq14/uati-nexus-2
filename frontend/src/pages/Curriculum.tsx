@@ -283,7 +283,10 @@ export default function Curriculum() {
       
       // Tratar erro de falta de curso
       if (axiosError?.response?.status === 404) {
-        const responseData = axiosError?.response?.data;
+        const responseData = axiosError?.response?.data as {
+          error?: string;
+          requiresCourseCreation?: boolean;
+        } | undefined;
         const errorText = responseData?.error?.toLowerCase() || '';
 
         if (responseData?.requiresCourseCreation || errorText.includes('no course')) {
