@@ -132,7 +132,7 @@ export default function ParadigmsMap() {
             goal: 7, // Intermediário 4 por padrão
             color: categoryColors[idx % categoryColors.length],
           };
-        }));
+        });
       } else {
         paradigmCompetences = [];
         setCategories([]);
