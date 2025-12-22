@@ -230,7 +230,7 @@ export default function ToolsFocus() {
   const highlightSession = recentSessions[0];
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8">
-      <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#1a0505] via-[#090101] to-[#020202] p-6 sm:p-8 shadow-[0_25px_90px_rgba(0,0,0,0.5)]">
+      <section className="border border-white/10 bg-transparent p-6 sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-primary">Tools & Focus</p>
@@ -260,8 +260,8 @@ export default function ToolsFocus() {
                   type="button"
                   onClick={() => setSelectedPreset(preset.minutes)}
                   className={cn(
-                    'rounded-2xl border border-white/10 bg-white/5 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-primary/50',
-                    selectedPreset === preset.minutes && 'border-white bg-white text-background shadow-lg shadow-white/10'
+                    'border-b border-white/10 p-4 text-left transition-all hover:border-primary/50',
+                    selectedPreset === preset.minutes && 'border-primary'
                   )}
                 >
                   <p
@@ -304,7 +304,7 @@ export default function ToolsFocus() {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-white/10 bg-black/40 p-6 text-center shadow-[0_25px_90px_rgba(0,0,0,0.55)]">
+          <div className="border border-white/10 bg-transparent p-6 text-center">
             <p className="text-xs uppercase tracking-[0.45em] text-white/70">Próximo ciclo</p>
             <div className="mt-4 text-6xl font-mono font-bold text-white">
               {selectedPreset.toString().padStart(2, '0')}:00
@@ -322,7 +322,7 @@ export default function ToolsFocus() {
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[1.35fr,0.65fr]">
-        <Card className="border border-white/5 bg-card/60 backdrop-blur">
+        <Card className="border border-white/10 bg-transparent">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-white">
               <Target className="h-5 w-5 text-primary" />
@@ -337,7 +337,7 @@ export default function ToolsFocus() {
                 { label: 'Ciclos', value: stats.completedCycles, helper: 'Pomodoros' },
                 { label: 'Streak', value: `${stats.streakDays}d`, helper: 'Dias seguidos' },
               ].map((item) => (
-                <div key={item.label} className="rounded-2xl border border-white/5 bg-white/5 p-4">
+                <div key={item.label} className="border-b border-white/10 pb-4">
                   <p className="text-xs uppercase tracking-wide text-white/60">{item.label}</p>
                   <p className="text-2xl font-semibold text-white">{item.value}</p>
                   <span className="text-[11px] text-white/60">{item.helper}</span>
@@ -360,7 +360,7 @@ export default function ToolsFocus() {
                   {recentSessions.map((session) => (
                     <div
                       key={session.id}
-                      className="items-center rounded-2xl border border-white/5 bg-white/5 px-4 py-3 text-sm text-white md:flex md:justify-between"
+                      className="items-center border-b border-white/10 px-4 py-3 text-sm text-white md:flex md:justify-between"
                     >
                       <div>
                         <p className="font-medium">{session.type === 'break' ? 'Pausa guiada' : 'Sessão focada'}</p>
@@ -379,7 +379,7 @@ export default function ToolsFocus() {
         </Card>
 
         <div className="space-y-6">
-          <Card className="border border-white/5 bg-card/60 backdrop-blur">
+          <Card className="border border-white/10 bg-transparent">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-white">
                 <Clock3 className="h-5 w-5 text-primary" />
@@ -408,7 +408,7 @@ export default function ToolsFocus() {
             </CardContent>
           </Card>
 
-          <Card className="border border-white/5 bg-card/60 backdrop-blur">
+          <Card className="border border-white/10 bg-transparent">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-white">
                 <Sparkles className="h-5 w-5 text-primary" />
@@ -417,7 +417,7 @@ export default function ToolsFocus() {
             </CardHeader>
             <CardContent className="space-y-3">
               {microHabits.map((habit) => (
-                <div key={habit.id} className="rounded-2xl border border-white/5 bg-white/[0.03] p-4">
+                <div key={habit.id} className="border-b border-white/10 pb-4">
                   <p className="text-sm font-semibold text-white">{habit.title}</p>
                   <p className="text-xs text-white/70">{habit.description}</p>
                 </div>
@@ -428,7 +428,7 @@ export default function ToolsFocus() {
       </section>
 
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-[1.35fr,0.65fr]">
-        <Card className="border border-white/5 bg-card/60 backdrop-blur">
+        <Card className="border border-white/10 bg-transparent">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-white">
               <Target className="h-5 w-5 text-primary" />
@@ -444,22 +444,22 @@ export default function ToolsFocus() {
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                <div className="rounded-2xl border border-white/5 bg-white/5 p-4">
+                <div className="border-b border-white/10 pb-4">
                   <p className="text-xs uppercase tracking-wide text-white/60">Minutos</p>
                   <p className="text-2xl font-semibold text-white">{stats.totalMinutes}</p>
                   <span className="text-[11px] text-white/60">Acumulado recente</span>
                 </div>
-                <div className="rounded-2xl border border-white/5 bg-white/5 p-4">
+                <div className="border-b border-white/10 pb-4">
                   <p className="text-xs uppercase tracking-wide text-white/60">Média</p>
                   <p className="text-2xl font-semibold text-white">{stats.averageMinutes}m</p>
                   <span className="text-[11px] text-white/60">Por ciclo</span>
                 </div>
-                <div className="rounded-2xl border border-white/5 bg-white/5 p-4">
+                <div className="border-b border-white/10 pb-4">
                   <p className="text-xs uppercase tracking-wide text-white/60">Ciclos</p>
                   <p className="text-2xl font-semibold text-white">{stats.completedCycles}</p>
                   <span className="text-[11px] text-white/60">Pomodoros</span>
                 </div>
-                <div className="rounded-2xl border border-white/5 bg-white/5 p-4">
+                <div className="border-b border-white/10 pb-4">
                   <p className="text-xs uppercase tracking-wide text-white/60">Streak</p>
                   <p className="text-2xl font-semibold text-white">{stats.streakDays}d</p>
                   <span className="text-[11px] text-white/60">Dias seguidos</span>
@@ -484,7 +484,7 @@ export default function ToolsFocus() {
                   {recentSessions.map((session) => (
                     <div
                       key={session.id}
-                      className="items-center rounded-2xl border border-white/5 bg-white/5 px-4 py-3 text-sm text-white md:flex md:justify-between"
+                      className="items-center border-b border-white/10 px-4 py-3 text-sm text-white md:flex md:justify-between"
                     >
                       <div>
                         <p className="font-medium">
@@ -507,7 +507,7 @@ export default function ToolsFocus() {
         </Card>
 
         <div className="space-y-6">
-          <Card className="border border-white/5 bg-card/60 backdrop-blur">
+          <Card className="border border-white/10 bg-transparent">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-white">
                 <Clock3 className="h-5 w-5 text-primary" />
@@ -544,7 +544,7 @@ export default function ToolsFocus() {
             </CardContent>
           </Card>
 
-          <Card className="border border-white/5 bg-card/60 backdrop-blur">
+          <Card className="border border-white/10 bg-transparent">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-white">
                 <Activity className="h-5 w-5 text-primary" />
@@ -558,10 +558,10 @@ export default function ToolsFocus() {
                   <button
                     key={link.id}
                     onClick={() => navigate(link.href)}
-                    className="w-full rounded-2xl border border-white/5 bg-white/5 p-4 text-left transition hover:border-primary/40 hover:bg-white/10"
+                    className="w-full border-b border-white/10 pb-4 text-left transition hover:border-primary/40"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="rounded-full bg-primary/10 p-2">
+                      <div className="p-2">
                         <Icon className="h-4 w-4 text-primary" />
                       </div>
                       <div className="flex-1">
@@ -579,7 +579,7 @@ export default function ToolsFocus() {
       </section>
 
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card className="border border-white/5 bg-card/60 backdrop-blur">
+        <Card className="border border-white/10 bg-transparent">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-white">
               <ListChecks className="h-5 w-5 text-primary" />
@@ -588,8 +588,8 @@ export default function ToolsFocus() {
           </CardHeader>
           <CardContent className="space-y-4">
             {routineSteps.map((step, index) => (
-              <div key={step.title} className="flex items-start gap-4 rounded-2xl border border-white/5 bg-white/5 p-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-sm font-semibold text-primary">
+              <div key={step.title} className="flex items-start gap-4 border-b border-white/10 pb-4">
+                <div className="flex h-10 w-10 items-center justify-center text-sm font-semibold text-primary">
                   {index + 1}
                 </div>
                 <div>
@@ -601,7 +601,7 @@ export default function ToolsFocus() {
           </CardContent>
         </Card>
 
-        <Card className="border border-white/5 bg-card/60 backdrop-blur">
+        <Card className="border border-white/10 bg-transparent">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-white">
               <Activity className="h-5 w-5 text-primary" />

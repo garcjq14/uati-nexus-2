@@ -661,7 +661,7 @@ function GraphContent() {
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8">
-      <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#210202] via-[#080101] to-[#040404] p-6 sm:p-8 shadow-[0_30px_90px_rgba(0,0,0,0.5)]">
+      <section className="border border-white/10 bg-transparent p-6 sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-[10px] font-mono uppercase tracking-[0.35em] text-primary">Mapa mental</p>
@@ -686,7 +686,7 @@ function GraphContent() {
         </div>
         <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
           {heroStats.map((item) => (
-            <div key={item.label} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div key={item.label} className="border-b border-white/10 pb-3">
               <p className="text-xs uppercase tracking-wide text-white/60">{item.label}</p>
               <p className="mt-2 text-2xl font-semibold text-white truncate">{item.value}</p>
             </div>
@@ -696,7 +696,7 @@ function GraphContent() {
 
       <div className="grid gap-6 xl:grid-cols-[320px,1fr]">
         <div className="space-y-4">
-          <Card className="border-white/5 bg-white/[0.02] backdrop-blur">
+          <Card className="border-white/10 bg-transparent">
             <CardContent className="space-y-4 p-5">
               <div className="space-y-2">
                 <label className="text-xs font-semibold uppercase tracking-[0.35em] text-white/60">Buscar conceito</label>
@@ -747,7 +747,7 @@ function GraphContent() {
             </CardContent>
           </Card>
 
-          <Card className="border-white/5 bg-white/[0.02] backdrop-blur">
+          <Card className="border-white/10 bg-transparent">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-white">
                 <Edit className="h-4 w-4 text-primary" />
@@ -762,11 +762,11 @@ function GraphContent() {
                     <p className="text-xs uppercase tracking-[0.3em] text-primary">{selectedNode.data.type || 'concept'}</p>
                   </div>
                   <div className="grid grid-cols-2 gap-3 text-sm text-white/70">
-                    <div className="rounded-lg border border-white/10 bg-white/5 p-3">
+                    <div className="border-b border-white/10 pb-3">
                       <p className="text-xs uppercase text-white/50">Conexões</p>
                       <p className="text-lg font-semibold text-white">{selectedConnections}</p>
                     </div>
-                    <div className="rounded-lg border border-white/10 bg-white/5 p-3">
+                    <div className="border-b border-white/10 pb-3">
                       <p className="text-xs uppercase text-white/50">Modo atual</p>
                       <p className="text-lg font-semibold text-white">
                         {nodeForConnection?.id === selectedNode.id ? 'Conectando' : 'Edição'}
@@ -799,7 +799,7 @@ function GraphContent() {
             </CardContent>
           </Card>
 
-          <Card className="border-white/5 bg-white/[0.02] backdrop-blur">
+          <Card className="border-white/10 bg-transparent">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-white">
                 <MapIcon className="h-4 w-4 text-primary" />
@@ -813,15 +813,17 @@ function GraphContent() {
                     <div
                       className={cn(
                         'h-3 w-3',
-                        item.shape === 'rounded-full' ? 'rounded-full' : item.shape === 'rounded' ? 'rounded-sm' : 'rotate-45'
+                        item.shape === 'rounded-full' ? 'rounded-full' : item.shape === 'rounded' ? 'rounded-sm' : 'rotate-45',
+                        item.color === '#780606' && 'bg-[#780606]',
+                        item.color === '#3b82f6' && 'bg-[#3b82f6]',
+                        item.color === '#10b981' && 'bg-[#10b981]'
                       )}
-                      style={{ backgroundColor: item.color }}
                     />
                     <p className="text-sm text-white">{item.label}</p>
                   </div>
                 ))}
               </div>
-              <div className="space-y-1 rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-white/70">
+              <div className="space-y-1 border-t border-white/10 pt-3 text-xs text-white/70">
                 <p>• Clique em um nó para selecioná-lo.</p>
                 <p>• Clique duas vezes para editar.</p>
                 <p>• Clique em dois nós em sequência para criar conexões.</p>
@@ -830,8 +832,7 @@ function GraphContent() {
           </Card>
         </div>
 
-        <Card className="flex-1 border border-white/5 bg-[#0d0d0d] overflow-hidden relative group shadow-2xl min-h-[calc(100vh-20rem)] sm:min-h-[calc(100vh-24rem)]">
-        <div className="absolute inset-0 bg-[radial-gradient(#ffffff03_1px,transparent_1px)] [background-size:16px_16px] opacity-30 pointer-events-none" />
+        <Card className="flex-1 border border-white/10 bg-transparent overflow-hidden relative group min-h-[calc(100vh-20rem)] sm:min-h-[calc(100vh-24rem)]">
         
         {error && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-red-500/20 border border-red-500/50 text-red-400 px-4 py-2 rounded-lg text-sm">
@@ -919,7 +920,7 @@ function GraphContent() {
 
             {nodeForConnection && (
               <Panel position="top-center" className="m-4">
-                <div className="px-4 py-2 rounded-lg bg-[#780606]/20 border border-[#780606]/50 backdrop-blur-sm">
+                <div className="px-4 py-2 border border-[#780606]/50 bg-transparent">
                   <p className="text-sm text-white font-medium">
                     Nó selecionado: <span className="text-[#780606]">{nodeForConnection.data.label}</span>
                   </p>
@@ -932,7 +933,7 @@ function GraphContent() {
 
             {selectedEdge && (
               <Panel position="top-right" className="m-4">
-                <div className="w-64 p-6 rounded-xl bg-black/90 border border-primary/30 backdrop-blur-xl shadow-[0_0_40px_rgba(0,0,0,0.5)]">
+                <div className="w-64 p-6 border border-primary/30 bg-transparent">
                   <h3 className="text-lg font-bold text-white mb-2">Conexão</h3>
                   <p className="text-xs text-muted-foreground mb-4">
                     Linha entre dois nós
