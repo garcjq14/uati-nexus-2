@@ -646,9 +646,9 @@ export default function Profile() {
                       <Button size="sm" variant="ghost" onClick={() => { setEditingName(false); setNameValue(user?.name || ''); }} className="h-8 w-8 p-0">✕</Button>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-3 mb-4">
+                    <div className="group flex items-center gap-3 mb-4">
                       <h2 className="text-4xl font-light text-white">{user?.name}</h2>
-                      <button onClick={() => setEditingName(true)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-white/5 rounded">
+                      <button onClick={() => setEditingName(true)} className="opacity-60 group-hover:opacity-100 transition-opacity p-1 hover:bg-white/5 rounded">
                         <Edit className="h-4 w-4 text-muted-foreground" />
                       </button>
                     </div>
@@ -692,12 +692,12 @@ export default function Profile() {
                       </Button>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2 mb-4">
+                    <div className="group flex items-center gap-2 mb-4">
                       <p className="text-xl text-muted-foreground">
                         {profileData.headline || user?.headline || 'Adicione um título profissional'}
                       </p>
-                      <button onClick={() => setEditingSection('headline')} className="opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Edit className="h-3 w-3 text-muted-foreground" />
+                      <button onClick={() => setEditingSection('headline')} className="opacity-60 group-hover:opacity-100 transition-opacity p-1 hover:bg-white/5 rounded">
+                        <Edit className="h-4 w-4 text-muted-foreground" />
                       </button>
                     </div>
                   )}
@@ -719,13 +719,13 @@ export default function Profile() {
                         <Button size="sm" variant="ghost" onClick={() => setEditingSection(null)} className="h-6 w-6 p-0">✓</Button>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2">
+                      <div className="group flex items-center gap-2">
                         <MapPin className="h-4 w-4 text-muted-foreground" />
                         <span className="text-muted-foreground">
                           {profileData.location || 'Adicione sua localização'}
                         </span>
-                        <button onClick={() => setEditingSection('location')} className="opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Edit className="h-3 w-3 text-muted-foreground" />
+                        <button onClick={() => setEditingSection('location')} className="opacity-60 group-hover:opacity-100 transition-opacity p-1 hover:bg-white/5 rounded">
+                          <Edit className="h-4 w-4 text-muted-foreground" />
                         </button>
                       </div>
                     )}
