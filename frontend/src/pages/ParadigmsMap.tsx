@@ -2,16 +2,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import { Modal } from '../components/ui/modal';
 import { Input } from '../components/ui/input';
-import {
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Radar,
-  ResponsiveContainer,
-  Legend,
-  Tooltip,
-} from 'recharts';
 import { useState, useEffect, useMemo } from 'react';
 import { Edit2, Plus, Trash2, Save, BookOpen, Search, Target, TrendingUp, CheckCircle2, AlertCircle, X, Filter, BarChart3 } from 'lucide-react';
 import api from '../lib/api';
@@ -400,18 +390,20 @@ export default function ParadigmsMap() {
     return 'not-started';
   };
 
-  const chartData = useMemo(() => {
+  const progressOverview = useMemo(() => {
     if (!filteredCompetences || filteredCompetences.length === 0) return [];
-    
+
     const calcProgress = (current: number, goal: number) => {
-      if (goal === 0 || current === 0) return 0;
-      return Math.min((current / goal) * 100, 100);
+      if (!goal) return 0;
+      return Math.min(Math.round((current / goal) * 100), 100);
     };
-    
-    if (filteredCompetences.length > 10) {
+
+    const shouldAggregate = filteredCompetences.length > 10;
+
+    if (shouldAggregate) {
       const categoryData: Record<string, { current: number; goal: number; count: number }> = {};
-      
-      filteredCompetences.forEach(comp => {
+
+      filteredCompetences.forEach((comp) => {
         if (!categoryData[comp.category]) {
           categoryData[comp.category] = { current: 0, goal: 0, count: 0 };
         }
@@ -419,50 +411,32 @@ export default function ParadigmsMap() {
         categoryData[comp.category].goal += comp.goal || 0;
         categoryData[comp.category].count += 1;
       });
-      
+
       return Object.entries(categoryData).map(([name, data]) => {
-        const avgCurrent = data.count > 0 ? Math.round(data.current / data.count) : 0;
-        const avgGoal = data.count > 0 ? Math.round(data.goal / data.count) : 0;
-        const progress = calcProgress(avgCurrent, avgGoal);
-        
+        const avgCurrent = data.count ? Math.round(data.current / data.count) : 0;
+        const avgGoal = data.count ? Math.round(data.goal / data.count) : MAX_LEVEL;
+        const progress = calcProgress(avgCurrent || 1, avgGoal || MAX_LEVEL);
+
         return {
-          name: name.length > 12 ? name.substring(0, 12) + '...' : name,
-          fullName: name,
-          atual: avgCurrent,
-          meta: avgGoal,
-          progresso: progress,
+          id: name,
+          title: name,
+          subtitle: `${data.count} competência${data.count > 1 ? 's' : ''}`,
+          current: avgCurrent,
+          goal: avgGoal,
+          progress,
         };
       });
-    } else {
-      return filteredCompetences.map(comp => ({
-        name: comp.name.length > 12 ? comp.name.substring(0, 12) + '...' : comp.name,
-        fullName: comp.name,
-        atual: comp.currentLevel || 1,
-        meta: comp.goal || MAX_LEVEL,
-        progresso: calcProgress(comp.currentLevel || 1, comp.goal || MAX_LEVEL),
-      }));
     }
+
+    return filteredCompetences.map((comp) => ({
+      id: comp.id,
+      title: comp.name,
+      subtitle: comp.category,
+      current: comp.currentLevel || 1,
+      goal: comp.goal || MAX_LEVEL,
+      progress: calcProgress(comp.currentLevel || 1, comp.goal || MAX_LEVEL),
+    }));
   }, [filteredCompetences]);
-
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (!active || !payload || !Array.isArray(payload) || payload.length === 0) {
-      return null;
-    }
-
-    const data = payload[0]?.payload;
-    if (!data) return null;
-
-    return (
-      <div className="bg-black/90 border border-white/10 rounded-lg p-3 shadow-xl">
-        <p className="text-white font-semibold mb-2">{data.fullName || data.name}</p>
-        {payload.map((entry: any, index: number) => (
-          <p key={index} className="text-xs" style={{ color: entry.color }}>
-            {entry.name}: <span className="font-bold">{entry.value}%</span>
-          </p>
-        ))}
-      </div>
-    );
-  };
 
   if (loading) {
     return <LoadingSkeleton variant="grid" count={3} />;
@@ -682,8 +656,8 @@ export default function ParadigmsMap() {
             </div>
           </div>
 
-          {/* Gráfico Radar Melhorado */}
-          {filteredCompetences && filteredCompetences.length > 0 && chartData && chartData.length > 0 && (
+          {/* Visão simplificada de progresso */}
+          {progressOverview.length > 0 && (
             <Card className="border-border/30 bg-card/50 backdrop-blur-sm shadow-xl">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -691,96 +665,59 @@ export default function ParadigmsMap() {
                   Visão Geral do Progresso
                 </CardTitle>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Comparação visual entre nível atual, meta e progresso em relação às metas
+                  Acompanhe o quanto falta para atingir suas metas principais. Cada cartão mostra o nível atual,
+                  a meta e o percentual concluído.
                 </p>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <ResponsiveContainer width="100%" height={450}>
-                    <RadarChart data={chartData} margin={{ top: 20, right: 30, bottom: 20, left: 20 }}>
-                      <PolarGrid 
-                        stroke="#27272a" 
-                        strokeWidth={1}
-                        gridType="polygon"
-                      />
-                      <PolarAngleAxis
-                        dataKey="name"
-                        tick={{ 
-                          fill: '#a1a1aa', 
-                          fontSize: 12,
-                          fontWeight: 500,
-                        }}
-                        tickLine={{ stroke: '#27272a' }}
-                      />
-                      <PolarRadiusAxis
-                        angle={90}
-                        domain={[0, MAX_LEVEL]}
-                        tick={{ 
-                          fill: '#71717a', 
-                          fontSize: 10 
-                        }}
-                        tickCount={7}
-                        tickFormatter={(value) => {
-                          const info = getLevelInfo(value);
-                          return info.display;
-                        }}
-                      />
-                      <Radar
-                        name="Nível Atual"
-                        dataKey="atual"
-                        stroke="#A31F34"
-                        fill="#A31F34"
-                        fillOpacity={0.7}
-                        strokeWidth={2}
-                        dot={{ r: 4, fill: '#A31F34' }}
-                      />
-                      <Radar
-                        name="Meta"
-                        dataKey="meta"
-                        stroke="#3b82f6"
-                        fill="#3b82f6"
-                        fillOpacity={0.4}
-                        strokeWidth={2}
-                        strokeDasharray="5 5"
-                        dot={{ r: 4, fill: '#3b82f6' }}
-                      />
-                      <Radar
-                        name="Progresso"
-                        dataKey="progresso"
-                        stroke="#10b981"
-                        fill="#10b981"
-                        fillOpacity={0.5}
-                        strokeWidth={2}
-                        dot={{ r: 4, fill: '#10b981' }}
-                      />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Legend 
-                        wrapperStyle={{ 
-                          color: '#a1a1aa', 
-                          fontSize: '13px',
-                          paddingTop: '20px'
-                        }}
-                        iconType="circle"
-                        iconSize={10}
-                      />
-                    </RadarChart>
-                  </ResponsiveContainer>
-                  
-                  <div className="flex flex-wrap gap-4 pt-4 border-t border-border/30 justify-center">
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 border border-primary/20">
-                      <div className="w-3 h-3 rounded-full bg-primary" />
-                      <span className="text-sm text-white font-medium">Nível Atual</span>
+              <CardContent className="space-y-4">
+                {progressOverview.map((item) => {
+                  const currentInfo = getLevelInfo(item.current || 1);
+                  const goalInfo = getLevelInfo(item.goal || MAX_LEVEL);
+                  const remainingLevels = Math.max(item.goal - item.current, 0);
+
+                  return (
+                    <div
+                      key={item.id}
+                      className="rounded-2xl border border-white/10 bg-white/[0.01] p-4 sm:p-5 space-y-3"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div>
+                          <p className="text-white font-semibold text-base sm:text-lg">{item.title}</p>
+                          {item.subtitle && (
+                            <p className="text-xs text-muted-foreground mt-0.5">{item.subtitle}</p>
+                          )}
+                        </div>
+                        <div className="flex gap-4 text-right">
+                          <div>
+                            <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Atual</p>
+                            <p className="text-lg font-bold text-white">{item.current}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Meta</p>
+                            <p className="text-lg font-bold text-primary">{item.goal}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 h-2.5 rounded-full bg-white/5 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-primary transition-all"
+                            style={{ width: `${item.progress}%` }}
+                          />
+                        </div>
+                        <span className="text-sm font-semibold text-white">{item.progress}%</span>
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs text-muted-foreground gap-2">
+                        <p>
+                          {currentInfo.display} → {goalInfo.display}
+                        </p>
+                        <p>
+                          Faltam {remainingLevels} nível{remainingLevels === 1 ? '' : 's'} ({Math.max(100 - item.progress, 0)}%)
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                      <div className="w-3 h-3 rounded-full bg-blue-500" />
-                      <span className="text-sm text-white font-medium">Meta</span>
-                    </div>
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-500/10 border border-green-500/20">
-                      <div className="w-3 h-3 rounded-full bg-green-500" />
-                      <span className="text-sm text-white font-medium">Progresso em relação à meta</span>
-                    </div>
-                  </div>
-                </div>
+                  );
+                })}
               </CardContent>
             </Card>
           )}
