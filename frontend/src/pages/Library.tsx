@@ -1343,6 +1343,7 @@ function ResourceFormSheet({
               {isSubmitting ? 'Salvando...' : mode === 'create' ? 'Adicionar' : 'Atualizar'}
             </Button>
           </div>
+          </div>
         </div>
       </div>
     </div>
