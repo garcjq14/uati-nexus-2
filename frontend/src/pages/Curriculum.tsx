@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import {
   BookOpenCheck,
   Target,
-  Search,
-  Filter,
   ArrowUpRight,
   Plus,
   CheckCircle2,
@@ -509,80 +507,14 @@ export default function Curriculum() {
       <div className="space-y-6">
         <Card className="bg-card border border-white/5 rounded-xl">
           <CardHeader className="p-4 sm:p-6 pb-3 sm:pb-4">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div className="min-w-0">
-                <p className="text-[9px] sm:text-[10px] font-mono uppercase tracking-[0.3em] text-muted-foreground mb-1">
-                  Filtrar e priorizar
-                </p>
-                <CardTitle className="text-base sm:text-lg font-semibold text-white">Módulos do Currículo</CardTitle>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => setSelectedBlock('todos')}
-                  className={cn(
-                    'px-3 py-1.5 rounded-lg border text-xs font-semibold transition-none',
-                    selectedBlock === 'todos'
-                      ? 'bg-[#780606] border-[#780606]/60 text-white'
-                      : 'border-white/10 text-muted-foreground hover:text-white hover:border-white/30'
-                  )}
-                >
-                  Todos
-                </button>
-                {blockOptions.slice(0, 3).map((block) => (
-                  <button
-                    key={block}
-                    type="button"
-                    onClick={() => setSelectedBlock(block)}
-                    className={cn(
-                      'px-3 py-1.5 rounded-lg border text-xs font-semibold transition-none',
-                      selectedBlock === block
-                        ? 'bg-[#780606] border-[#780606]/60 text-white'
-                        : 'border-white/10 text-muted-foreground hover:text-white hover:border-white/30'
-                    )}
-                  >
-                    {block}
-                  </button>
-                ))}
-              </div>
+            <div className="min-w-0">
+              <p className="text-[9px] sm:text-[10px] font-mono uppercase tracking-[0.3em] text-muted-foreground mb-1">
+                Filtrar e priorizar
+              </p>
+              <CardTitle className="text-base sm:text-lg font-semibold text-white">Módulos do Currículo</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6 pt-0 space-y-3 sm:space-y-4">
-            <div className="grid gap-3 sm:gap-4 xl:gap-5 grid-cols-1 md:grid-cols-[2fr_1fr]">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Buscar por código ou título..."
-                  className="pl-10 bg-white/[0.02] border-white/10 text-white"
-                />
-              </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <Filter className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                  Blocos
-                </span>
-                <div className="flex gap-2 flex-wrap">
-                  {blockOptions.map((block) => (
-                    <button
-                      key={block}
-                      type="button"
-                      onClick={() => setSelectedBlock(block)}
-                      className={cn(
-                        'px-3 py-1.5 rounded-lg border text-xs font-semibold transition-none',
-                        selectedBlock === block
-                          ? 'bg-[#780606] border-[#780606]/60 text-white'
-                          : 'border-white/10 text-muted-foreground hover:text-white hover:border-white/30'
-                      )}
-                    >
-                      {block}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
             {blockSummary.length > 0 && (
               <div className="grid gap-3 sm:gap-4 xl:gap-5 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
                 {blockSummary.map((block) => (
