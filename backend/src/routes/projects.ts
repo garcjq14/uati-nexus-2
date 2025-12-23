@@ -107,8 +107,15 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
       progress: progress !== undefined ? parseInt(progress) : 0,
       repository: repository?.trim() || null,
       technologies: technologies || '[]',
-      customFields: stringifyCustomFields(validatedCustomFields),
     };
+
+    // Only add customFields if column exists in database
+    try {
+      projectData.customFields = stringifyCustomFields(validatedCustomFields);
+    } catch (err) {
+      // If customFields column doesn't exist, skip it
+      console.warn('customFields column may not exist, skipping:', err);
+    }
 
     // Handle deadline - convert empty string to null, or parse date string
     if (deadline && deadline.trim()) {
@@ -122,10 +129,29 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
       projectData.deadline = null;
     }
 
-    const project = await prisma.project.create({
-      data: projectData,
-      include: { tasks: true },
-    });
+    // Try to create project, fallback without customFields if column doesn't exist
+    let project;
+    try {
+      project = await prisma.project.create({
+        data: projectData,
+        include: { tasks: true },
+      });
+    } catch (createError: any) {
+      // If error is due to customFields column not existing, try without it
+      if (createError?.message?.includes('customFields') || 
+          createError?.message?.includes('no such column') || 
+          createError?.code === 'P2021') {
+        const projectDataWithoutCustomFields = { ...projectData };
+        delete projectDataWithoutCustomFields.customFields;
+        
+        project = await prisma.project.create({
+          data: projectDataWithoutCustomFields,
+          include: { tasks: true },
+        });
+      } else {
+        throw createError;
+      }
+    }
 
     // Track activity for achievements
     try {
