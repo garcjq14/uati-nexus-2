@@ -1187,22 +1187,22 @@ function ResourceFormSheet({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur">
-      <div className="relative w-full max-w-3xl rounded-xl border border-white/10 bg-card p-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-4 sm:py-8 backdrop-blur overflow-y-auto">
+      <div className="relative w-full max-w-3xl max-h-[90vh] rounded-xl border border-white/10 bg-card p-4 sm:p-6 lg:p-8 my-auto">
         <button
-          className="absolute right-5 top-5 text-muted-foreground hover:text-white"
+          className="absolute right-3 top-3 sm:right-5 sm:top-5 text-muted-foreground hover:text-white z-10"
           onClick={onClose}
           aria-label="Fechar formulário"
           title="Fechar"
         >
           <X className="h-5 w-5" />
         </button>
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6 overflow-y-auto max-h-[calc(90vh-2rem)] pr-2">
           <div>
             <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-[#780606]">
               {mode === 'create' ? 'Novo recurso' : 'Editar recurso'}
             </p>
-            <h2 className="text-3xl font-serif font-light text-white leading-tight">
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-serif font-light text-white leading-tight">
               {mode === 'create' ? 'Adicionar à biblioteca' : 'Aprimorar informações'}
             </h2>
           </div>
