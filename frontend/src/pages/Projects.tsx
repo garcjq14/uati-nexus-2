@@ -52,6 +52,117 @@ const ProgressBar = memo(function ProgressBar({ progress }: { progress: number }
   );
 });
 
+interface ProjectCardProps {
+  project: {
+    id: string;
+    title: string;
+    type: string;
+    status: string;
+    progress: number;
+  };
+  isSelected: boolean;
+  onSelect: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  isDeleting: boolean;
+}
+
+const ProjectCard = memo(function ProjectCard({
+  project,
+  isSelected,
+  onSelect,
+  onEdit,
+  onDelete,
+  isDeleting,
+}: ProjectCardProps) {
+  return (
+    <div
+      className={cn(
+        'group relative w-full rounded-2xl border border-white/10 bg-white/[0.01] p-5 sm:p-6 transition-all hover:border-[#780606]/40 focus-within:border-[#780606]/60 focus-within:ring-2 focus-within:ring-[#780606]/20 focus-within:ring-offset-2 focus-within:ring-offset-background',
+        isSelected && 'border-[#780606] bg-[#780606]/5 shadow-[0_0_0_1px_rgba(120,6,6,0.2)]'
+      )}
+      role="listitem"
+    >
+      <div className="flex items-start justify-between gap-4 sm:gap-5">
+        <button
+          type="button"
+          onClick={onSelect}
+          className="flex items-start gap-4 sm:gap-5 flex-1 min-w-0 text-left focus:outline-none"
+          aria-label={`Ver detalhes do projeto ${project.title}`}
+          aria-describedby={`project-${project.id}-description`}
+        >
+          <div
+            className={cn(
+              'h-12 w-12 rounded-xl border border-white/10 bg-black/40 flex items-center justify-center flex-shrink-0',
+              project.status === 'em_progresso' && 'bg-[#780606]/10 border-[#780606]/20'
+            )}
+            aria-hidden="true"
+          >
+            <Code className="h-5 w-5 sm:h-6 sm:w-6 text-white/80" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-3 mb-2">
+              <h3 className="text-base sm:text-lg font-semibold text-white truncate flex-1 min-w-0">
+                {project.title}
+              </h3>
+              <div className="flex-shrink-0 ml-2">
+                <ProjectStatusBadge 
+                  status={project.status as 'em_progresso' | 'finalizado' | 'planejado'} 
+                  size="sm"
+                />
+              </div>
+            </div>
+            <p 
+              id={`project-${project.id}-description`}
+              className="text-xs sm:text-sm font-mono uppercase tracking-[0.3em] text-muted-foreground mb-2 sm:mb-3"
+            >
+              {project.type}
+            </p>
+            {project.status === 'em_progresso' && (
+              <div className="space-y-1.5 sm:space-y-2" aria-label={`Progresso: ${project.progress}%`}>
+                <div className="flex items-center justify-between text-xs sm:text-sm text-muted-foreground">
+                  <span>Progresso</span>
+                  <span className="font-semibold text-white" aria-live="polite">{project.progress}%</span>
+                </div>
+                <ProgressBar progress={project.progress} />
+              </div>
+            )}
+          </div>
+        </button>
+        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit();
+            }}
+            className="opacity-40 group-hover:opacity-100 p-1.5 sm:p-2 hover:bg-white/10 rounded-lg transition-all text-muted-foreground hover:text-white"
+            aria-label={`Editar projeto ${project.title}`}
+            title="Editar projeto"
+          >
+            <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            disabled={isDeleting}
+            className="opacity-40 group-hover:opacity-100 p-1.5 sm:p-2 hover:bg-red-500/10 rounded-lg transition-all text-muted-foreground hover:text-red-400 disabled:opacity-50"
+            aria-label={`Deletar projeto ${project.title}`}
+            title="Deletar projeto"
+          >
+            <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          </button>
+          <ArrowUpRight 
+            className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground group-hover:text-[#780606] transition-colors flex-shrink-0" 
+            aria-hidden="true"
+          />
+        </div>
+      </div>
+    </div>
+  );
+});
+
 export default function Projects() {
   const navigate = useNavigate();
   const { courseData, loading, refreshCourseData } = useCourse();
@@ -155,7 +266,7 @@ export default function Projects() {
     } finally {
       setIsCreatingProject(false);
     }
-  }, [newProject, showError, success, checkAfterAction, refreshCourseData]);
+  };
 
   if (loading) {
     return <LoadingSkeleton variant="grid" count={6} />;
@@ -618,84 +729,6 @@ export default function Projects() {
                       onDelete={() => handleDeleteProject(project.id)}
                       isDeleting={isDeletingProject === project.id}
                     />
-                      <div className="flex items-start justify-between gap-4 sm:gap-5">
-                        <button
-                          type="button"
-                          onClick={() => handleSelect(project.id)}
-                          className="flex items-start gap-4 sm:gap-5 flex-1 min-w-0 text-left focus:outline-none"
-                          aria-label={`Ver detalhes do projeto ${project.title}`}
-                          aria-describedby={`project-${project.id}-description`}
-                        >
-                          <div
-                            className={cn(
-                              'h-12 w-12 rounded-xl border border-white/10 bg-black/40 flex items-center justify-center flex-shrink-0',
-                              project.status === 'em_progresso' && 'bg-[#780606]/10 border-[#780606]/20'
-                            )}
-                            aria-hidden="true"
-                          >
-                            <Code className="h-5 w-5 sm:h-6 sm:w-6 text-white/80" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            {/* Header row: Title and Status (fixed position) */}
-                            <div className="flex items-start justify-between gap-3 mb-2">
-                              <h3 className="text-base sm:text-lg font-semibold text-white truncate flex-1 min-w-0">
-                                {project.title}
-                              </h3>
-                              <div className="flex-shrink-0 ml-2">
-                                <ProjectStatusBadge 
-                                  status={project.status as 'em_progresso' | 'finalizado' | 'planejado'} 
-                                  size="sm"
-                                />
-                              </div>
-                            </div>
-                            <p 
-                              id={`project-${project.id}-description`}
-                              className="text-xs sm:text-sm font-mono uppercase tracking-[0.3em] text-muted-foreground mb-2 sm:mb-3"
-                            >
-                              {project.type}
-                            </p>
-                            {project.status === 'em_progresso' && (
-                              <div className="space-y-1.5 sm:space-y-2" aria-label={`Progresso: ${project.progress}%`}>
-                                <div className="flex items-center justify-between text-xs sm:text-sm text-muted-foreground">
-                                  <span>Progresso</span>
-                                  <span className="font-semibold text-white" aria-live="polite">{project.progress}%</span>
-                                </div>
-                                <ProgressBar progress={project.progress} />
-                              </div>
-                            )}
-                          </div>
-                        </button>
-                        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEditProject(project);
-                            }}
-                            className="opacity-40 group-hover:opacity-100 p-1.5 sm:p-2 hover:bg-white/10 rounded-lg transition-all text-muted-foreground hover:text-white"
-                            aria-label={`Editar projeto ${project.title}`}
-                            title="Editar projeto"
-                          >
-                            <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteProject(project.id);
-                            }}
-                            disabled={isDeletingProject === project.id}
-                            className="opacity-40 group-hover:opacity-100 p-1.5 sm:p-2 hover:bg-red-500/10 rounded-lg transition-all text-muted-foreground hover:text-red-400 disabled:opacity-50"
-                            aria-label={`Deletar projeto ${project.title}`}
-                            title="Deletar projeto"
-                          >
-                            <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                          </button>
-                          <ArrowUpRight 
-                            className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground group-hover:text-[#780606] transition-colors flex-shrink-0" 
-                            aria-hidden="true"
-                          />
-                        </div>
-                      </div>
-                    </div>
                   ))
                 )}
               </CardContent>
