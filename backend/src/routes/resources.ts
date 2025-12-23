@@ -40,7 +40,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
 
     // Filtrar apenas os campos válidos do schema
     // Campos opcionais que podem não existir no banco ainda
-    const optionalFields = ['description', 'estimatedChapters'];
+    const optionalFields = ['description', 'estimatedChapters', 'customFields'];
     const requiredFields = ['title', 'author', 'format', 'status', 'url', 'notes', 'tags', 'topicId'];
     const allowedFields = [...requiredFields, ...optionalFields];
     
@@ -115,7 +115,7 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
     
     // Filtrar apenas os campos válidos do schema
     // Campos opcionais que podem não existir no banco ainda
-    const optionalFields = ['description', 'estimatedChapters'];
+    const optionalFields = ['description', 'estimatedChapters', 'customFields'];
     const requiredFields = ['title', 'author', 'format', 'status', 'url', 'notes', 'tags', 'topicId'];
     const allowedFields = [...requiredFields, ...optionalFields];
     
