@@ -12,13 +12,10 @@ import {
   CheckCircle2,
   X,
   Save,
-  LayoutGrid,
   List,
   Calendar,
   PenTool,
   Rocket,
-  Target,
-  Clock,
   Code,
   Sparkles,
   Edit,
@@ -29,8 +26,6 @@ import { cn } from '../lib/utils';
 import api from '../lib/api';
 import { EmptyState } from '../components/empty-states/EmptyState';
 import { LoadingSkeleton } from '../components/feedback/LoadingStates';
-import { KanbanBoard } from '../components/projects/KanbanBoard';
-import { KanbanAllProjects } from '../components/projects/KanbanAllProjects';
 import { ProjectTimeline } from '../components/projects/ProjectTimeline';
 import { ProjectStatusBadge } from '../components/projects/ProjectStatusBadge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
@@ -64,7 +59,7 @@ export default function Projects() {
   const { checkAfterAction } = useAchievementChecker();
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('todos');
-  const [viewMode, setViewMode] = useState<'list' | 'kanban' | 'timeline'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'timeline'>('list');
   const [showCreateProject, setShowCreateProject] = useState(false);
   const [showEditProject, setShowEditProject] = useState(false);
   const [showAddTask, setShowAddTask] = useState(false);
@@ -72,7 +67,6 @@ export default function Projects() {
   const [isUpdatingProject, setIsUpdatingProject] = useState(false);
   const [isDeletingProject, setIsDeletingProject] = useState<string | null>(null);
   const [isAddingTask, setIsAddingTask] = useState(false);
-  const [isMovingTask, setIsMovingTask] = useState<string | null>(null);
   const [editingProject, setEditingProject] = useState<(typeof projects)[0] | null>(null);
   const [newProject, setNewProject] = useState({
     title: '',
@@ -91,43 +85,6 @@ export default function Projects() {
     return projects.filter((p) => p.status === statusFilter);
   }, [projects, statusFilter]);
 
-  const activeProject =
-    (selectedProject && projects.find((p) => p.id === selectedProject)) ||
-    projects.find((p) => p.status === 'em_progresso');
-
-  const localTasks = useMemo(() => {
-    return activeProject?.tasks || [];
-  }, [activeProject]);
-
-  const moveTask = async (taskId: string, newStatus: 'todo' | 'doing' | 'done') => {
-    if (isMovingTask) return;
-    setIsMovingTask(taskId);
-    try {
-      await api.put(`/projects/tasks/${taskId}`, { status: newStatus });
-      await refreshCourseData();
-      success('Tarefa movida com sucesso!');
-    } catch (error) {
-      console.error('Failed to move task:', error);
-      showError('Erro ao mover tarefa. Tente novamente.');
-    } finally {
-      setIsMovingTask(null);
-    }
-  };
-
-  const deleteTask = async (taskId: string) => {
-    try {
-      await api.delete(`/projects/tasks/${taskId}`);
-      await refreshCourseData();
-      success('Tarefa deletada com sucesso!');
-    } catch (error) {
-      console.error('Failed to delete task:', error);
-      showError('Erro ao deletar tarefa. Tente novamente.');
-    }
-  };
-
-  const todoTasks = localTasks.filter((t) => t.status === 'todo');
-  const doingTasks = localTasks.filter((t) => t.status === 'doing');
-  const doneTasks = localTasks.filter((t) => t.status === 'done');
 
   const stats = useMemo(() => {
     const total = projects.length;
@@ -467,11 +424,11 @@ export default function Projects() {
   };
 
   const handleAddTask = async () => {
-    const projectId = localStorage.getItem('newTaskProjectId') || activeProject?.id;
+    const projectId = localStorage.getItem('newTaskProjectId') || selectedProject;
     const status = (localStorage.getItem('newTaskStatus') as 'todo' | 'doing' | 'done') || 'todo';
     
     if (!newTaskTitle.trim() || !projectId) {
-      showError('Título da tarefa é obrigatório');
+      showError('Título da tarefa é obrigatório e um projeto deve estar selecionado');
       return;
     }
     
@@ -617,15 +574,11 @@ export default function Projects() {
           </button>
         </div>
 
-        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'list' | 'kanban' | 'timeline')}>
+        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'list' | 'timeline')}>
           <TabsList className="bg-white/5 border border-white/5">
             <TabsTrigger value="list" className="data-[state=active]:bg-[#780606]">
               <List className="mr-2 h-4 w-4" />
               Lista
-            </TabsTrigger>
-            <TabsTrigger value="kanban" className="data-[state=active]:bg-[#780606]">
-              <LayoutGrid className="mr-2 h-4 w-4" />
-              Kanban
             </TabsTrigger>
             <TabsTrigger value="timeline" className="data-[state=active]:bg-[#780606]">
               <Calendar className="mr-2 h-4 w-4" />
@@ -636,11 +589,9 @@ export default function Projects() {
       </div>
 
       {/* Content Views */}
-      <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'list' | 'kanban' | 'timeline')}>
+      <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'list' | 'timeline')}>
         <TabsContent value="list" className="mt-0">
-          <div className="grid grid-cols-1 gap-6 md:gap-8 lg:grid-cols-[2fr_1fr] xl:grid-cols-[2fr_1fr]">
-            {/* Projects List */}
-            <Card className="border-white/5 bg-[#050506]/90">
+          <Card className="border-white/5 bg-[#050506]/90">
               <CardHeader className="flex flex-col gap-2">
                 <CardTitle className="text-2xl text-white" id="projects-heading">Projetos</CardTitle>
                 <p className="text-sm text-muted-foreground">
@@ -748,213 +699,6 @@ export default function Projects() {
                 )}
               </CardContent>
             </Card>
-
-            {/* Quick Kanban Sidebar */}
-            <Card className="border-white/10 bg-black/60 h-fit sticky top-24">
-              <CardHeader className="border-b border-white/5 pb-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-lg font-semibold text-white">Kanban Rápido</CardTitle>
-                    <p className="text-xs text-muted-foreground mt-1 truncate">
-                      {activeProject?.title || 'Selecione um projeto'}
-                    </p>
-                  </div>
-                  <div className="flex gap-1">
-                    <div className="h-2 w-2 rounded-full bg-yellow-500" />
-                    <div className="h-2 w-2 rounded-full bg-[#780606]" />
-                    <div className="h-2 w-2 rounded-full bg-green-500" />
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-6 pt-6">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-mono uppercase tracking-wider text-yellow-500">
-                      A Fazer
-                    </span>
-                    <span className="text-xs text-muted-foreground">{todoTasks.length}</span>
-                  </div>
-                  {todoTasks.length > 0 ? (
-                    todoTasks.map((task) => (
-                      <div
-                        key={task.id}
-                        className="bg-white/[0.02] border border-white/5 hover:border-white/10 rounded-lg p-3 text-sm text-muted-foreground group relative transition-colors"
-                      >
-                        <div className="flex justify-between items-start">
-                          <span className="flex-1">{task.title}</span>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              moveTask(task.id, 'doing');
-                            }}
-                            disabled={isMovingTask === task.id}
-                            className="opacity-40 group-hover:opacity-100 ml-2 p-1 hover:bg-white/10 rounded transition-all text-[#780606] disabled:opacity-50"
-                            aria-label={`Mover tarefa "${task.title}" para em andamento`}
-                            title="Mover para em andamento"
-                          >
-                            <ArrowUpRight className="h-3 w-3" />
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="bg-white/[0.02] border border-dashed border-yellow-500/20 rounded-lg p-6 min-h-[80px] flex flex-col items-center justify-center gap-2 text-center hover:border-yellow-500/30 transition-colors">
-                      <Clock className="h-5 w-5 text-yellow-500/50" />
-                      <p className="text-xs text-muted-foreground">Nenhuma tarefa pendente</p>
-                      <p className="text-[10px] text-muted-foreground/70">Adicione uma tarefa para começar</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-mono uppercase tracking-wider text-[#780606]">
-                      Em Andamento
-                    </span>
-                    <span className="text-xs text-muted-foreground">{doingTasks.length}</span>
-                  </div>
-                  {doingTasks.length > 0 ? (
-                    doingTasks.map((task) => (
-                      <div
-                        key={task.id}
-                        className="bg-[#780606]/5 border border-[#780606]/20 rounded-lg p-3 text-sm text-white shadow-[0_0_15px_rgba(120,6,6,0.1)] group relative"
-                      >
-                        <div className="flex justify-between items-start">
-                          <span className="flex-1">{task.title}</span>
-                          <div className="flex gap-1 opacity-40 group-hover:opacity-100 transition-opacity ml-2">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                moveTask(task.id, 'done');
-                              }}
-                              disabled={isMovingTask === task.id}
-                              className="p-1 hover:bg-[#780606]/20 rounded text-green-500 disabled:opacity-50"
-                              aria-label={`Marcar tarefa "${task.title}" como concluída`}
-                              title="Marcar como concluída"
-                            >
-                              <CheckCircle2 className="h-3 w-3" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="bg-white/[0.02] border border-dashed border-[#780606]/20 rounded-lg p-6 min-h-[80px] flex flex-col items-center justify-center gap-2 text-center hover:border-[#780606]/30 transition-colors">
-                      <Target className="h-5 w-5 text-[#780606]/50" />
-                      <p className="text-xs text-muted-foreground">Arraste uma tarefa para cá</p>
-                      <p className="text-[10px] text-muted-foreground/70">ou mova uma tarefa de "A Fazer"</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-mono uppercase tracking-wider text-green-500">
-                      Concluído
-                    </span>
-                    <span className="text-xs text-muted-foreground">{doneTasks.length}</span>
-                  </div>
-                  {doneTasks.length > 0 ? (
-                    doneTasks.map((task) => (
-                      <div
-                        key={task.id}
-                        className="bg-green-500/5 border border-green-500/10 rounded-lg p-3 text-sm text-muted-foreground line-through opacity-60"
-                      >
-                        {task.title}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="bg-white/[0.02] border border-dashed border-green-500/20 rounded-lg p-6 min-h-[80px] flex flex-col items-center justify-center gap-2 text-center hover:border-green-500/30 transition-colors opacity-60">
-                      <CheckCircle2 className="h-5 w-5 text-green-500/50" />
-                      <p className="text-xs text-muted-foreground">Nenhuma tarefa concluída</p>
-                      <p className="text-[10px] text-muted-foreground/70">Complete tarefas para vê-las aqui</p>
-                    </div>
-                  )}
-                </div>
-
-                <Button
-                  variant="outline"
-                  className="w-full border-dashed border-white/20 text-muted-foreground hover:text-white hover:border-[#780606]/50 hover:bg-[#780606]/5 transition-all"
-                  onClick={() => {
-                    if (!activeProject) {
-                      showError('Selecione um projeto primeiro');
-                      return;
-                    }
-                    setShowAddTask(true);
-                  }}
-                  disabled={!activeProject}
-                  aria-label="Adicionar nova tarefa rápida"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Adicionar Tarefa Rápida
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="kanban" className="mt-0">
-          {projects.length > 0 ? (
-            <Card className="border-white/5 bg-[#050506]/90">
-              <CardHeader>
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="text-2xl text-white">Kanban de Tarefas</CardTitle>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Visualize e gerencie tarefas de todos os projetos. Arraste tarefas entre as colunas.
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {projects.map((project) => (
-                      <div key={project.id} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10">
-                        <Code className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-xs text-white truncate max-w-[150px]">{project.title}</span>
-                        <ProjectStatusBadge 
-                          status={(project.status || 'em_progresso') as 'em_progresso' | 'finalizado' | 'planejado'} 
-                          size="sm"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="p-4 sm:p-6">
-                <div className="w-full">
-                  <KanbanAllProjects
-                    projects={filteredProjects as any}
-                    onTaskMove={moveTask}
-                    onTaskDelete={deleteTask}
-                    onAddTask={(projectId, status) => {
-                      const project = projects.find((p) => p.id === projectId);
-                      if (project) {
-                        setSelectedProject(projectId);
-                        setShowAddTask(true);
-                        localStorage.setItem('newTaskStatus', status);
-                        localStorage.setItem('newTaskProjectId', projectId);
-                      }
-                    }}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card className="border-white/5 bg-[#050506]/90">
-              <CardContent className="text-center py-12">
-                <div className="h-16 w-16 rounded-full bg-[#780606]/10 flex items-center justify-center mx-auto mb-4">
-                  <LayoutGrid className="h-8 w-8 text-[#780606]" />
-                </div>
-                <p className="text-muted-foreground mb-4">Nenhum projeto encontrado</p>
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowCreateProject(true)}
-                  className="bg-[#780606] hover:bg-[#780606]/90 text-white"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Criar Primeiro Projeto
-                </Button>
-              </CardContent>
-            </Card>
-          )}
         </TabsContent>
 
         <TabsContent value="timeline" className="mt-0">
