@@ -428,88 +428,74 @@ export default function ParadigmsMap() {
 
       {/* Estatísticas */}
       {competences.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-4">
-          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 hover:border-white/20 transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-[#780606]/10 border border-[#780606]/20 flex items-center justify-center flex-shrink-0">
-                <Target className="h-5 w-5 text-[#780606]" />
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+          <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3 hover:bg-white/[0.02] transition-colors">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <Target className="h-3.5 w-3.5 text-[#780606]" />
+                <p className="text-[9px] uppercase tracking-[0.3em] text-muted-foreground">Total</p>
               </div>
-              <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Total</p>
-                <p className="text-xl sm:text-2xl font-bold text-white">{stats.total}</p>
-              </div>
+              <p className="text-2xl font-bold text-white">{stats.total}</p>
             </div>
           </div>
           
-          <div className="rounded-xl border border-green-500/20 bg-green-500/5 p-4 hover:border-green-500/40 transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-green-500/10 border border-green-500/20 flex items-center justify-center flex-shrink-0">
-                <CheckCircle2 className="h-5 w-5 text-green-400" />
+          <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3 hover:bg-white/[0.02] transition-colors">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-3.5 w-3.5 text-green-400" />
+                <p className="text-[9px] uppercase tracking-[0.3em] text-muted-foreground">Concluídas</p>
               </div>
-              <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Concluídas</p>
-                <p className="text-xl sm:text-2xl font-bold text-green-400">{stats.completed}</p>
-              </div>
+              <p className="text-2xl font-bold text-green-400">{stats.completed}</p>
             </div>
           </div>
 
-          <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-4 hover:border-blue-500/40 transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0">
-                <TrendingUp className="h-5 w-5 text-blue-400" />
+          <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3 hover:bg-white/[0.02] transition-colors">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-3.5 w-3.5 text-blue-400" />
+                <p className="text-[9px] uppercase tracking-[0.3em] text-muted-foreground">Em Progresso</p>
               </div>
-              <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Em Progresso</p>
-                <p className="text-xl sm:text-2xl font-bold text-blue-400">{stats.inProgress}</p>
-              </div>
+              <p className="text-2xl font-bold text-blue-400">{stats.inProgress}</p>
             </div>
           </div>
 
-          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 hover:border-amber-500/40 transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
-                <AlertCircle className="h-5 w-5 text-amber-400" />
+          <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3 hover:bg-white/[0.02] transition-colors">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-3.5 w-3.5 text-amber-400" />
+                <p className="text-[9px] uppercase tracking-[0.3em] text-muted-foreground">Não Iniciadas</p>
               </div>
-              <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Não Iniciadas</p>
-                <p className="text-xl sm:text-2xl font-bold text-amber-400">{stats.notStarted}</p>
-              </div>
+              <p className="text-2xl font-bold text-amber-400">{stats.notStarted}</p>
             </div>
           </div>
 
-          <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-4 hover:border-blue-500/40 transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0">
-                <TrendingUp className="h-5 w-5 text-blue-400" />
+          <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3 hover:bg-white/[0.02] transition-colors">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-3.5 w-3.5 text-cyan-400" />
+                <p className="text-[9px] uppercase tracking-[0.3em] text-muted-foreground">Iniciante</p>
               </div>
-              <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Iniciante</p>
-                <p className="text-xl sm:text-2xl font-bold text-blue-400">{stats.iniciante}</p>
-              </div>
+              <p className="text-2xl font-bold text-cyan-400">{stats.iniciante}</p>
             </div>
           </div>
           
-          <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-4 hover:border-purple-500/40 transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center flex-shrink-0">
-                <Target className="h-5 w-5 text-purple-400" />
+          <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3 hover:bg-white/[0.02] transition-colors">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <Target className="h-3.5 w-3.5 text-purple-400" />
+                <p className="text-[9px] uppercase tracking-[0.3em] text-muted-foreground">Intermediário</p>
               </div>
-              <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Intermediário</p>
-                <p className="text-xl sm:text-2xl font-bold text-purple-400">{stats.intermediario}</p>
-              </div>
+              <p className="text-2xl font-bold text-purple-400">{stats.intermediario}</p>
             </div>
           </div>
           
-          <div className="rounded-xl border border-[#780606]/20 bg-[#780606]/5 p-4 hover:border-[#780606]/40 transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-[#780606]/10 border border-[#780606]/20 flex items-center justify-center flex-shrink-0">
-                <BarChart3 className="h-5 w-5 text-[#780606]" />
+          <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3 hover:bg-white/[0.02] transition-colors">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <BarChart3 className="h-3.5 w-3.5 text-[#780606]" />
+                <p className="text-[9px] uppercase tracking-[0.3em] text-muted-foreground">Avançado</p>
               </div>
-              <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Avançado</p>
-                <p className="text-xl sm:text-2xl font-bold text-[#780606]">{stats.avancado}</p>
-              </div>
+              <p className="text-2xl font-bold text-[#780606]">{stats.avancado}</p>
             </div>
           </div>
         </div>

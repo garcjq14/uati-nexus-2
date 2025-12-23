@@ -602,9 +602,16 @@ export default function Curriculum() {
                       >
                       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                         <div>
-                          <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-muted-foreground">
-                            {module.code}
-                          </p>
+                          <div className="flex items-center gap-3 mb-2">
+                            <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-muted-foreground">
+                              {module.code}
+                            </p>
+                            {module.block && (
+                              <span className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+                                • {formatBlockLabel(module.block)}
+                              </span>
+                            )}
+                          </div>
                           <h3 className="text-2xl font-semibold text-white">{module.title}</h3>
                           <p className="text-sm text-muted-foreground mt-2">
                             {module.description || 'Sem descrição detalhada.'}
@@ -704,16 +711,6 @@ export default function Curriculum() {
                               Nenhum marco cadastrado para este módulo.
                             </div>
                           )}
-                        </div>
-                        <div className="space-y-4">
-                          <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4">
-                            <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                              Bloco
-                            </p>
-                            <p className="text-lg font-semibold text-white">
-                              {formatBlockLabel(module.block)}
-                            </p>
-                          </div>
                         </div>
                       </div>
                     </div>
