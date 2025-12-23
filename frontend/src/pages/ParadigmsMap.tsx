@@ -480,14 +480,24 @@ export default function ParadigmsMap() {
             Compare seu nível atual com suas metas e veja quanto falta para alcançá-las.
           </p>
         </div>
-        <Button 
-          variant="default" 
-          onClick={() => setShowAddCompetence(true)} 
-          className="gap-2 shadow-[0_0_20px_rgba(120,6,6,0.3)] flex-shrink-0"
-        >
-          <Plus className="h-4 w-4" />
-          Nova Competência
-        </Button>
+        <div className="flex gap-2 flex-shrink-0">
+          <Button 
+            variant="outline" 
+            onClick={() => setShowAddCategory(true)} 
+            className="gap-2 border-dashed border-white/20 hover:border-primary/50 hover:text-primary"
+          >
+            <Plus className="h-4 w-4" />
+            Nova Categoria
+          </Button>
+          <Button 
+            variant="default" 
+            onClick={() => setShowAddCompetence(true)} 
+            className="gap-2 shadow-[0_0_20px_rgba(120,6,6,0.3)]"
+          >
+            <Plus className="h-4 w-4" />
+            Nova Competência
+          </Button>
+        </div>
       </div>
 
       {/* Estatísticas */}
@@ -594,13 +604,25 @@ export default function ParadigmsMap() {
       )}
 
       {competences.length === 0 && !loading ? (
-        <EmptyState
-          icon={Target}
-          title="Nenhuma competência cadastrada"
-          description="Comece adicionando competências e definindo suas metas de aprendizado. Acompanhe seu progresso e veja quanto falta para alcançar cada objetivo."
-          actionLabel="Adicionar Primeira Competência"
-          onAction={() => setShowAddCompetence(true)}
-        />
+        <div className="space-y-6">
+          <EmptyState
+            icon={Target}
+            title="Nenhuma competência cadastrada"
+            description="Comece criando uma categoria e depois adicione competências. Organize suas habilidades por áreas de conhecimento."
+            actionLabel="Adicionar Primeira Competência"
+            onAction={() => setShowAddCompetence(true)}
+          />
+          <div className="flex justify-center gap-3">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowAddCategory(true)} 
+              className="gap-2 border-dashed border-white/20 hover:border-primary/50 hover:text-primary"
+            >
+              <Plus className="h-4 w-4" />
+              Criar Categoria Primeiro
+            </Button>
+          </div>
+        </div>
       ) : (
         <>
           {/* Filtros e Busca */}
