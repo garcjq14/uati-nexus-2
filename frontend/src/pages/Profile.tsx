@@ -5,6 +5,7 @@ import api from '../lib/api';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import { ProjectStatusBadge } from '../components/projects/ProjectStatusBadge';
 import { 
   LogOut, Mail, Code, Trophy, Upload,
   Brain, ArrowRight, Edit, X, Plus, Trash2, 
@@ -1302,14 +1303,18 @@ export default function Profile() {
                               </div>
                             )}
                           </div>
-                          <span className={cn(
-                            "text-xs font-bold px-2 py-1 rounded-full",
-                            project.status === 'completed' || project.progress === 100
-                              ? "bg-green-500/20 text-green-400"
-                              : "bg-primary/20 text-primary"
-                          )}>
-                            {project.status === 'completed' || project.progress === 100 ? 'Concluído' : `${project.progress}%`}
-                          </span>
+                          {project.status === 'completed' || project.status === 'finalizado' || project.progress === 100 ? (
+                            <ProjectStatusBadge 
+                              status="finalizado" 
+                              size="sm"
+                            />
+                          ) : (
+                            <span className={cn(
+                              "text-xs font-bold px-2 py-1 rounded-full bg-primary/20 text-primary"
+                            )}>
+                              {project.progress}%
+                            </span>
+                          )}
                         </div>
                         {project.repository && (
                           <a

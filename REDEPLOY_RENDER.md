@@ -91,3 +91,4 @@ Se o deploy automático não iniciar:
 2. Tente chamar `/api/setup-db` novamente
 3. Se persistir, verifique a conexão com o banco de dados
 
+

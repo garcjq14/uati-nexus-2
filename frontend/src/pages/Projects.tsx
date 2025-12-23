@@ -31,6 +31,7 @@ import { EmptyState } from '../components/empty-states/EmptyState';
 import { LoadingSkeleton } from '../components/feedback/LoadingStates';
 import { KanbanBoard } from '../components/projects/KanbanBoard';
 import { ProjectTimeline } from '../components/projects/ProjectTimeline';
+import { ProjectStatusBadge } from '../components/projects/ProjectStatusBadge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { ContextualHelp } from '../components/help/ContextualHelp';
 import { useToast } from '../components/feedback/ToastSystem';
@@ -497,7 +498,7 @@ export default function Projects() {
         <div className="flex flex-col gap-4 sm:gap-6 lg:gap-8 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-3 sm:space-y-4 max-w-2xl">
             <div className="flex items-center gap-2 sm:gap-3">
-              <p className="text-[9px] sm:text-[10px] font-mono uppercase tracking-[0.3em] sm:tracking-[0.4em] text-[#780606]">
+              <p className="text-xs sm:text-sm font-mono uppercase tracking-[0.3em] sm:tracking-[0.4em] text-[#780606]">
                 Portfólio Prático
               </p>
               <ContextualHelp section="projects" />
@@ -512,15 +513,15 @@ export default function Projects() {
             <div className="grid gap-3 sm:gap-4 sm:grid-cols-3">
               <div>
                 <p className="text-2xl sm:text-3xl font-semibold text-white">{stats.total}</p>
-                <p className="text-[9px] sm:text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Total</p>
+                <p className="text-xs sm:text-sm uppercase tracking-[0.3em] text-muted-foreground">Total</p>
               </div>
               <div>
                 <p className="text-2xl sm:text-3xl font-semibold text-white">{stats.emProgresso}</p>
-                <p className="text-[9px] sm:text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Em andamento</p>
+                <p className="text-xs sm:text-sm uppercase tracking-[0.3em] text-muted-foreground">Em andamento</p>
               </div>
               <div>
                 <p className="text-2xl sm:text-3xl font-semibold text-white">{stats.avgProgress}%</p>
-                <p className="text-[9px] sm:text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Progresso médio</p>
+                <p className="text-xs sm:text-sm uppercase tracking-[0.3em] text-muted-foreground">Progresso médio</p>
               </div>
             </div>
           </div>
@@ -554,37 +555,50 @@ export default function Projects() {
 
       {/* Filters and View Toggle */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex bg-white/5 rounded-lg p-1 border border-white/5">
+        <div 
+          className="flex bg-white/5 rounded-lg p-1 border border-white/5"
+          role="tablist"
+          aria-label="Filtros de status de projetos"
+        >
           <button
             onClick={() => setStatusFilter('todos')}
             className={cn(
-              'px-3 py-1.5 rounded-md text-xs font-medium transition-all',
+              'px-3 py-1.5 rounded-md text-xs font-medium transition-all focus:outline-none focus:ring-2 focus:ring-[#780606] focus:ring-offset-2 focus:ring-offset-background',
               statusFilter === 'todos'
                 ? 'bg-[#780606] text-white'
                 : 'text-muted-foreground hover:text-white'
             )}
+            aria-label="Mostrar todos os projetos"
+            aria-pressed={statusFilter === 'todos'}
+            role="tab"
           >
             Todos
           </button>
           <button
             onClick={() => setStatusFilter('em_progresso')}
             className={cn(
-              'px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap',
+              'px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-[#780606] focus:ring-offset-2 focus:ring-offset-background',
               statusFilter === 'em_progresso'
                 ? 'bg-[#780606] text-white'
                 : 'text-muted-foreground hover:text-white'
             )}
+            aria-label="Mostrar apenas projetos em progresso"
+            aria-pressed={statusFilter === 'em_progresso'}
+            role="tab"
           >
             Em Progresso
           </button>
           <button
             onClick={() => setStatusFilter('finalizado')}
             className={cn(
-              'px-3 py-1.5 rounded-md text-xs font-medium transition-all',
+              'px-3 py-1.5 rounded-md text-xs font-medium transition-all focus:outline-none focus:ring-2 focus:ring-[#780606] focus:ring-offset-2 focus:ring-offset-background',
               statusFilter === 'finalizado'
                 ? 'bg-[#780606] text-white'
                 : 'text-muted-foreground hover:text-white'
             )}
+            aria-label="Mostrar apenas projetos finalizados"
+            aria-pressed={statusFilter === 'finalizado'}
+            role="tab"
           >
             Finalizados
           </button>
@@ -611,18 +625,22 @@ export default function Projects() {
       {/* Content Views */}
       <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'list' | 'kanban' | 'timeline')}>
         <TabsContent value="list" className="mt-0">
-          <div className="grid grid-cols-1 gap-8 xl:grid-cols-[2fr_1fr]">
+          <div className="grid grid-cols-1 gap-6 md:gap-8 lg:grid-cols-[2fr_1fr] xl:grid-cols-[2fr_1fr]">
             {/* Projects List */}
             <Card className="border-white/5 bg-[#050506]/90">
               <CardHeader className="flex flex-col gap-2">
-                <CardTitle className="text-2xl text-white">Projetos</CardTitle>
+                <CardTitle className="text-2xl text-white" id="projects-heading">Projetos</CardTitle>
                 <p className="text-sm text-muted-foreground">
                   Clique em um projeto para ver detalhes completos e gerenciar tarefas.
                 </p>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6" role="list" aria-labelledby="projects-heading">
                 {filteredProjects.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-white/10 p-10 text-center text-muted-foreground">
+                  <div 
+                    className="rounded-2xl border border-dashed border-white/10 p-10 text-center text-muted-foreground"
+                    role="status"
+                    aria-live="polite"
+                  >
                     Nenhum projeto encontrado com o filtro selecionado.
                   </div>
                 ) : (
@@ -630,46 +648,52 @@ export default function Projects() {
                     <div
                       key={project.id}
                       className={cn(
-                        'group relative w-full rounded-2xl border border-white/10 bg-white/[0.01] p-4 sm:p-5 transition-all hover:border-[#780606]/40',
-                        selectedProject === project.id && 'border-[#780606]/60 bg-[#780606]/5'
+                        'group relative w-full rounded-2xl border border-white/10 bg-white/[0.01] p-5 sm:p-6 transition-all hover:border-[#780606]/40 focus-within:border-[#780606]/60 focus-within:ring-2 focus-within:ring-[#780606]/20 focus-within:ring-offset-2 focus-within:ring-offset-background',
+                        selectedProject === project.id && 'border-[#780606] bg-[#780606]/5 shadow-[0_0_0_1px_rgba(120,6,6,0.2)]'
                       )}
+                      role="listitem"
                     >
-                      <div className="flex items-start justify-between gap-3 sm:gap-4">
+                      <div className="flex items-start justify-between gap-4 sm:gap-5">
                         <button
                           type="button"
                           onClick={() => handleSelect(project.id)}
-                          className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0 text-left"
+                          className="flex items-start gap-4 sm:gap-5 flex-1 min-w-0 text-left focus:outline-none"
+                          aria-label={`Ver detalhes do projeto ${project.title}`}
+                          aria-describedby={`project-${project.id}-description`}
                         >
                           <div
                             className={cn(
                               'h-12 w-12 rounded-xl border border-white/10 bg-black/40 flex items-center justify-center flex-shrink-0',
                               project.status === 'em_progresso' && 'bg-[#780606]/10 border-[#780606]/20'
                             )}
+                            aria-hidden="true"
                           >
                             <Code className="h-5 w-5 sm:h-6 sm:w-6 text-white/80" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
-                              <h3 className="text-base sm:text-lg font-semibold text-white truncate">{project.title}</h3>
-                              <span
-                                className={cn(
-                                  'inline-flex items-center rounded-full border px-2 sm:px-3 py-0.5 sm:py-1 text-[9px] sm:text-[10px] font-semibold uppercase tracking-[0.2em] whitespace-nowrap flex-shrink-0',
-                                  project.status === 'finalizado'
-                                    ? 'text-emerald-400 border-emerald-400/40 bg-emerald-500/5'
-                                    : 'text-[#780606] border-[#780606]/40 bg-[#780606]/10'
-                                )}
-                              >
-                                {project.status === 'finalizado' ? 'Finalizado' : 'Em Progresso'}
-                              </span>
+                            {/* Header row: Title and Status (fixed position) */}
+                            <div className="flex items-start justify-between gap-3 mb-2">
+                              <h3 className="text-base sm:text-lg font-semibold text-white truncate flex-1 min-w-0">
+                                {project.title}
+                              </h3>
+                              <div className="flex-shrink-0 ml-2">
+                                <ProjectStatusBadge 
+                                  status={project.status as 'em_progresso' | 'finalizado' | 'planejado'} 
+                                  size="sm"
+                                />
+                              </div>
                             </div>
-                            <p className="text-[9px] sm:text-[10px] font-mono uppercase tracking-[0.3em] text-muted-foreground mb-2 sm:mb-3">
+                            <p 
+                              id={`project-${project.id}-description`}
+                              className="text-xs sm:text-sm font-mono uppercase tracking-[0.3em] text-muted-foreground mb-2 sm:mb-3"
+                            >
                               {project.type}
                             </p>
                             {project.status === 'em_progresso' && (
-                              <div className="space-y-1.5 sm:space-y-2">
-                                <div className="flex items-center justify-between text-[10px] sm:text-xs text-muted-foreground">
+                              <div className="space-y-1.5 sm:space-y-2" aria-label={`Progresso: ${project.progress}%`}>
+                                <div className="flex items-center justify-between text-xs sm:text-sm text-muted-foreground">
                                   <span>Progresso</span>
-                                  <span className="font-semibold text-white">{project.progress}%</span>
+                                  <span className="font-semibold text-white" aria-live="polite">{project.progress}%</span>
                                 </div>
                                 <ProgressBar progress={project.progress} />
                               </div>
@@ -682,8 +706,9 @@ export default function Projects() {
                               e.stopPropagation();
                               handleEditProject(project);
                             }}
-                            className="opacity-0 group-hover:opacity-100 p-1.5 sm:p-2 hover:bg-white/10 rounded-lg transition-all text-muted-foreground hover:text-white"
-                            aria-label="Editar projeto"
+                            className="opacity-40 group-hover:opacity-100 p-1.5 sm:p-2 hover:bg-white/10 rounded-lg transition-all text-muted-foreground hover:text-white"
+                            aria-label={`Editar projeto ${project.title}`}
+                            title="Editar projeto"
                           >
                             <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                           </button>
@@ -693,12 +718,16 @@ export default function Projects() {
                               handleDeleteProject(project.id);
                             }}
                             disabled={isDeletingProject === project.id}
-                            className="opacity-0 group-hover:opacity-100 p-1.5 sm:p-2 hover:bg-red-500/10 rounded-lg transition-all text-muted-foreground hover:text-red-400 disabled:opacity-50"
-                            aria-label="Deletar projeto"
+                            className="opacity-40 group-hover:opacity-100 p-1.5 sm:p-2 hover:bg-red-500/10 rounded-lg transition-all text-muted-foreground hover:text-red-400 disabled:opacity-50"
+                            aria-label={`Deletar projeto ${project.title}`}
+                            title="Deletar projeto"
                           >
                             <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                           </button>
-                          <ArrowUpRight className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground group-hover:text-[#780606] transition-colors flex-shrink-0" />
+                          <ArrowUpRight 
+                            className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground group-hover:text-[#780606] transition-colors flex-shrink-0" 
+                            aria-hidden="true"
+                          />
                         </div>
                       </div>
                     </div>
@@ -727,27 +756,28 @@ export default function Projects() {
               <CardContent className="space-y-6 pt-6">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-yellow-500">
+                    <span className="text-xs font-mono uppercase tracking-wider text-yellow-500">
                       A Fazer
                     </span>
-                    <span className="text-[10px] text-muted-foreground">{todoTasks.length}</span>
+                    <span className="text-xs text-muted-foreground">{todoTasks.length}</span>
                   </div>
                   {todoTasks.length > 0 ? (
                     todoTasks.map((task) => (
                       <div
                         key={task.id}
-                        className="bg-white/[0.02] border border-white/5 hover:border-white/10 rounded-lg p-3 text-sm text-muted-foreground group relative"
+                        className="bg-white/[0.02] border border-white/5 hover:border-white/10 rounded-lg p-3 text-sm text-muted-foreground group relative transition-colors"
                       >
                         <div className="flex justify-between items-start">
-                          <span>{task.title}</span>
+                          <span className="flex-1">{task.title}</span>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               moveTask(task.id, 'doing');
                             }}
                             disabled={isMovingTask === task.id}
-                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-white/10 rounded transition-all text-[#780606] disabled:opacity-50"
-                            aria-label="Mover tarefa para em andamento"
+                            className="opacity-40 group-hover:opacity-100 ml-2 p-1 hover:bg-white/10 rounded transition-all text-[#780606] disabled:opacity-50"
+                            aria-label={`Mover tarefa "${task.title}" para em andamento`}
+                            title="Mover para em andamento"
                           >
                             <ArrowUpRight className="h-3 w-3" />
                           </button>
@@ -755,18 +785,20 @@ export default function Projects() {
                       </div>
                     ))
                   ) : (
-                    <div className="bg-white/[0.02] border border-white/5 rounded-lg p-3 text-sm text-muted-foreground min-h-[60px] flex items-center justify-center border-dashed">
-                      Nenhuma tarefa pendente
+                    <div className="bg-white/[0.02] border border-dashed border-yellow-500/20 rounded-lg p-6 min-h-[80px] flex flex-col items-center justify-center gap-2 text-center hover:border-yellow-500/30 transition-colors">
+                      <Clock className="h-5 w-5 text-yellow-500/50" />
+                      <p className="text-xs text-muted-foreground">Nenhuma tarefa pendente</p>
+                      <p className="text-[10px] text-muted-foreground/70">Adicione uma tarefa para começar</p>
                     </div>
                   )}
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-[#780606]">
+                    <span className="text-xs font-mono uppercase tracking-wider text-[#780606]">
                       Em Andamento
                     </span>
-                    <span className="text-[10px] text-muted-foreground">{doingTasks.length}</span>
+                    <span className="text-xs text-muted-foreground">{doingTasks.length}</span>
                   </div>
                   {doingTasks.length > 0 ? (
                     doingTasks.map((task) => (
@@ -775,8 +807,8 @@ export default function Projects() {
                         className="bg-[#780606]/5 border border-[#780606]/20 rounded-lg p-3 text-sm text-white shadow-[0_0_15px_rgba(120,6,6,0.1)] group relative"
                       >
                         <div className="flex justify-between items-start">
-                          <span>{task.title}</span>
-                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <span className="flex-1">{task.title}</span>
+                          <div className="flex gap-1 opacity-40 group-hover:opacity-100 transition-opacity ml-2">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -784,7 +816,8 @@ export default function Projects() {
                               }}
                               disabled={isMovingTask === task.id}
                               className="p-1 hover:bg-[#780606]/20 rounded text-green-500 disabled:opacity-50"
-                              aria-label="Marcar tarefa como concluída"
+                              aria-label={`Marcar tarefa "${task.title}" como concluída`}
+                              title="Marcar como concluída"
                             >
                               <CheckCircle2 className="h-3 w-3" />
                             </button>
@@ -793,18 +826,20 @@ export default function Projects() {
                       </div>
                     ))
                   ) : (
-                    <div className="bg-white/[0.02] border border-white/5 rounded-lg p-3 text-sm text-muted-foreground min-h-[60px] flex items-center justify-center border-dashed">
-                      Arraste uma tarefa para cá
+                    <div className="bg-white/[0.02] border border-dashed border-[#780606]/20 rounded-lg p-6 min-h-[80px] flex flex-col items-center justify-center gap-2 text-center hover:border-[#780606]/30 transition-colors">
+                      <Target className="h-5 w-5 text-[#780606]/50" />
+                      <p className="text-xs text-muted-foreground">Arraste uma tarefa para cá</p>
+                      <p className="text-[10px] text-muted-foreground/70">ou mova uma tarefa de "A Fazer"</p>
                     </div>
                   )}
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-green-500">
+                    <span className="text-xs font-mono uppercase tracking-wider text-green-500">
                       Concluído
                     </span>
-                    <span className="text-[10px] text-muted-foreground">{doneTasks.length}</span>
+                    <span className="text-xs text-muted-foreground">{doneTasks.length}</span>
                   </div>
                   {doneTasks.length > 0 ? (
                     doneTasks.map((task) => (
@@ -816,8 +851,10 @@ export default function Projects() {
                       </div>
                     ))
                   ) : (
-                    <div className="bg-white/[0.02] border border-white/5 rounded-lg p-3 text-sm text-muted-foreground opacity-60 min-h-[60px] flex items-center justify-center border-dashed">
-                      Nenhuma tarefa concluída
+                    <div className="bg-white/[0.02] border border-dashed border-green-500/20 rounded-lg p-6 min-h-[80px] flex flex-col items-center justify-center gap-2 text-center hover:border-green-500/30 transition-colors opacity-60">
+                      <CheckCircle2 className="h-5 w-5 text-green-500/50" />
+                      <p className="text-xs text-muted-foreground">Nenhuma tarefa concluída</p>
+                      <p className="text-[10px] text-muted-foreground/70">Complete tarefas para vê-las aqui</p>
                     </div>
                   )}
                 </div>
@@ -833,6 +870,7 @@ export default function Projects() {
                     setShowAddTask(true);
                   }}
                   disabled={!activeProject}
+                  aria-label="Adicionar nova tarefa rápida"
                 >
                   <Plus className="mr-2 h-4 w-4" />
                   Adicionar Tarefa Rápida

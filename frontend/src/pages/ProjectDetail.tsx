@@ -2,6 +2,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import { ProjectStatusBadge } from '../components/projects/ProjectStatusBadge';
 import {
   ArrowLeft,
   Rocket,
@@ -349,16 +350,10 @@ export default function ProjectDetail() {
                     <option value="finalizado">Finalizado</option>
                   </select>
                 ) : (
-                  <span
-                    className={cn(
-                      'inline-flex items-center rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em]',
-                      displayProject?.status === 'finalizado'
-                        ? 'text-emerald-400 border-emerald-400/40 bg-emerald-500/5'
-                        : 'text-[#780606] border-[#780606]/40 bg-[#780606]/10'
-                    )}
-                  >
-                    {displayProject?.status === 'finalizado' ? 'Finalizado' : 'Em Progresso'}
-                  </span>
+                  <ProjectStatusBadge 
+                    status={(displayProject?.status || 'em_progresso') as 'em_progresso' | 'finalizado' | 'planejado'} 
+                    size="sm"
+                  />
                 )}
               </div>
             </CardHeader>

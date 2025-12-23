@@ -101,3 +101,4 @@ npm run preview
 - Verifique se `JWT_SECRET` está configurado no Render
 - Verifique se o token está sendo enviado (veja Network tab no navegador)
 
+

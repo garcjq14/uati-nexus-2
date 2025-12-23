@@ -144,3 +144,4 @@ Se aparecer `localhost:3001`, a variável `VITE_API_URL` não está configurada 
 
 4. **Verifique se o banco de dados está acessível** do Render
 
+

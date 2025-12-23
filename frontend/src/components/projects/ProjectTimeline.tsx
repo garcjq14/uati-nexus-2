@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, Clock, CheckCircle2, Circle } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
+import { ProjectStatusBadge } from './ProjectStatusBadge';
 import { cn } from '../../lib/utils';
 import { Link } from 'react-router-dom';
 
@@ -124,18 +125,10 @@ export function ProjectTimeline({ projects }: ProjectTimelineProps) {
                           </div>
                         </div>
                         <div className="flex-shrink-0">
-                          <span
-                            className={cn(
-                              'inline-flex items-center rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em]',
-                              getStatusColor(project.status)
-                            )}
-                          >
-                            {project.status === 'finalizado'
-                              ? 'Finalizado'
-                              : project.status === 'em_progresso'
-                              ? 'Em Progresso'
-                              : 'Planejado'}
-                          </span>
+                          <ProjectStatusBadge 
+                            status={(project.status || 'planejado') as 'em_progresso' | 'finalizado' | 'planejado'} 
+                            size="sm"
+                          />
                         </div>
                       </div>
 

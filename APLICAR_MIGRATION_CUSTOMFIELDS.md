@@ -83,3 +83,4 @@ Após aplicar a migration:
 
 A migration `20251222000000_add_curriculum_custom_fields` adiciona o campo `customFields` na tabela `curriculum` com valor padrão `'{}'`. Este campo é usado para armazenar campos personalizados específicos do domínio do curso.
 
+

@@ -195,3 +195,4 @@ Antes de considerar tudo configurado, verifique:
 - [Documentação do Vercel](https://vercel.com/docs)
 - [Documentação do CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
 
+
