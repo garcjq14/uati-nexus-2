@@ -30,6 +30,7 @@ import api from '../lib/api';
 import { EmptyState } from '../components/empty-states/EmptyState';
 import { LoadingSkeleton } from '../components/feedback/LoadingStates';
 import { KanbanBoard } from '../components/projects/KanbanBoard';
+import { KanbanAllProjects } from '../components/projects/KanbanAllProjects';
 import { ProjectTimeline } from '../components/projects/ProjectTimeline';
 import { ProjectStatusBadge } from '../components/projects/ProjectStatusBadge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
@@ -466,22 +467,34 @@ export default function Projects() {
   };
 
   const handleAddTask = async () => {
-    if (!newTaskTitle.trim() || !activeProject) {
+    const projectId = localStorage.getItem('newTaskProjectId') || activeProject?.id;
+    const status = (localStorage.getItem('newTaskStatus') as 'todo' | 'doing' | 'done') || 'todo';
+    
+    if (!newTaskTitle.trim() || !projectId) {
       showError('Título da tarefa é obrigatório');
       return;
     }
+    
+    const project = projects.find((p) => p.id === projectId);
+    if (!project) {
+      showError('Projeto não encontrado');
+      return;
+    }
+    
     setIsAddingTask(true);
     try {
-      const taskCount = activeProject.tasks?.length || 0;
-      await api.post(`/projects/${activeProject.id}/tasks`, {
+      const taskCount = project.tasks?.length || 0;
+      await api.post(`/projects/${projectId}/tasks`, {
         title: newTaskTitle.trim(),
-        status: 'todo',
+        status: status,
         order: taskCount + 1,
       });
 
       await refreshCourseData();
       setShowAddTask(false);
       setNewTaskTitle('');
+      localStorage.removeItem('newTaskStatus');
+      localStorage.removeItem('newTaskProjectId');
       success('Tarefa adicionada com sucesso!');
     } catch (error) {
       console.error('Failed to add task:', error);
@@ -888,52 +901,40 @@ export default function Projects() {
                   <div className="flex-1">
                     <CardTitle className="text-2xl text-white">Kanban de Tarefas</CardTitle>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Gerencie tarefas arrastando entre as colunas
+                      Visualize e gerencie tarefas de todos os projetos. Arraste tarefas entre as colunas.
                     </p>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                      Projeto:
-                    </label>
-                    <select
-                      value={selectedProject || activeProject?.id || ''}
-                      onChange={(e) => {
-                        const projectId = e.target.value;
-                        setSelectedProject(projectId || null);
-                      }}
-                      className="h-10 rounded-md bg-white/[0.02] border border-white/10 px-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#780606] min-w-[200px]"
-                    >
-                      <option value="">Selecione um projeto</option>
-                      {projects.map((project) => (
-                        <option key={project.id} value={project.id}>
-                          {project.title}
-                        </option>
-                      ))}
-                    </select>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {projects.map((project) => (
+                      <div key={project.id} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10">
+                        <Code className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-xs text-white truncate max-w-[150px]">{project.title}</span>
+                        <ProjectStatusBadge 
+                          status={(project.status || 'em_progresso') as 'em_progresso' | 'finalizado' | 'planejado'} 
+                          size="sm"
+                        />
+                      </div>
+                    ))}
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="p-4 sm:p-6">
-                {activeProject ? (
-                  <div className="w-full overflow-x-auto">
-                    <div className="min-w-[900px] md:min-w-0">
-                      <KanbanBoard
-                        tasks={localTasks as any}
-                        onTaskMove={moveTask}
-                        onTaskDelete={deleteTask}
-                        onAddTask={(status) => {
-                          if (!activeProject) return;
-                          setShowAddTask(true);
-                          localStorage.setItem('newTaskStatus', status);
-                        }}
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <p>Selecione um projeto para ver o Kanban</p>
-                  </div>
-                )}
+                <div className="w-full">
+                  <KanbanAllProjects
+                    projects={filteredProjects as any}
+                    onTaskMove={moveTask}
+                    onTaskDelete={deleteTask}
+                    onAddTask={(projectId, status) => {
+                      const project = projects.find((p) => p.id === projectId);
+                      if (project) {
+                        setSelectedProject(projectId);
+                        setShowAddTask(true);
+                        localStorage.setItem('newTaskStatus', status);
+                        localStorage.setItem('newTaskProjectId', projectId);
+                      }
+                    }}
+                  />
+                </div>
               </CardContent>
             </Card>
           ) : (
@@ -942,9 +943,14 @@ export default function Projects() {
                 <div className="h-16 w-16 rounded-full bg-[#780606]/10 flex items-center justify-center mx-auto mb-4">
                   <LayoutGrid className="h-8 w-8 text-[#780606]" />
                 </div>
-                <p className="text-muted-foreground mb-4">Selecione um projeto para ver o Kanban</p>
-                <Button variant="outline" onClick={() => setViewMode('list')}>
-                  Ver Lista de Projetos
+                <p className="text-muted-foreground mb-4">Nenhum projeto encontrado</p>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowCreateProject(true)}
+                  className="bg-[#780606] hover:bg-[#780606]/90 text-white"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Criar Primeiro Projeto
                 </Button>
               </CardContent>
             </Card>
@@ -1218,6 +1224,8 @@ export default function Projects() {
         onClose={() => {
           setShowAddTask(false);
           setNewTaskTitle('');
+          localStorage.removeItem('newTaskStatus');
+          localStorage.removeItem('newTaskProjectId');
         }}
         title="Adicionar Tarefa"
         size="md"
@@ -1253,6 +1261,8 @@ export default function Projects() {
               onClick={() => {
                 setShowAddTask(false);
                 setNewTaskTitle('');
+                localStorage.removeItem('newTaskStatus');
+                localStorage.removeItem('newTaskProjectId');
               }}
               disabled={isAddingTask}
             >
