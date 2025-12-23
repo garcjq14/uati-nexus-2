@@ -609,14 +609,15 @@ export default function Projects() {
                   </div>
                 ) : (
                   filteredProjects.map((project) => (
-                    <div
+                    <ProjectCard
                       key={project.id}
-                      className={cn(
-                        'group relative w-full rounded-2xl border border-white/10 bg-white/[0.01] p-5 sm:p-6 transition-all hover:border-[#780606]/40 focus-within:border-[#780606]/60 focus-within:ring-2 focus-within:ring-[#780606]/20 focus-within:ring-offset-2 focus-within:ring-offset-background',
-                        selectedProject === project.id && 'border-[#780606] bg-[#780606]/5 shadow-[0_0_0_1px_rgba(120,6,6,0.2)]'
-                      )}
-                      role="listitem"
-                    >
+                      project={project}
+                      isSelected={selectedProject === project.id}
+                      onSelect={() => handleSelect(project.id)}
+                      onEdit={() => handleEditProject(project)}
+                      onDelete={() => handleDeleteProject(project.id)}
+                      isDeleting={isDeletingProject === project.id}
+                    />
                       <div className="flex items-start justify-between gap-4 sm:gap-5">
                         <button
                           type="button"
