@@ -390,54 +390,6 @@ export default function ParadigmsMap() {
     return 'not-started';
   };
 
-  const progressOverview = useMemo(() => {
-    if (!filteredCompetences || filteredCompetences.length === 0) return [];
-
-    const calcProgress = (current: number, goal: number) => {
-      if (!goal) return 0;
-      return Math.min(Math.round((current / goal) * 100), 100);
-    };
-
-    const shouldAggregate = filteredCompetences.length > 10;
-
-    if (shouldAggregate) {
-      const categoryData: Record<string, { current: number; goal: number; count: number }> = {};
-
-      filteredCompetences.forEach((comp) => {
-        if (!categoryData[comp.category]) {
-          categoryData[comp.category] = { current: 0, goal: 0, count: 0 };
-        }
-        categoryData[comp.category].current += comp.currentLevel || 0;
-        categoryData[comp.category].goal += comp.goal || 0;
-        categoryData[comp.category].count += 1;
-      });
-
-      return Object.entries(categoryData).map(([name, data]) => {
-        const avgCurrent = data.count ? Math.round(data.current / data.count) : 0;
-        const avgGoal = data.count ? Math.round(data.goal / data.count) : MAX_LEVEL;
-        const progress = calcProgress(avgCurrent || 1, avgGoal || MAX_LEVEL);
-
-        return {
-          id: name,
-          title: name,
-          subtitle: `${data.count} competência${data.count > 1 ? 's' : ''}`,
-          current: avgCurrent,
-          goal: avgGoal,
-          progress,
-        };
-      });
-    }
-
-    return filteredCompetences.map((comp) => ({
-      id: comp.id,
-      title: comp.name,
-      subtitle: comp.category,
-      current: comp.currentLevel || 1,
-      goal: comp.goal || MAX_LEVEL,
-      progress: calcProgress(comp.currentLevel || 1, comp.goal || MAX_LEVEL),
-    }));
-  }, [filteredCompetences]);
-
   if (loading) {
     return <LoadingSkeleton variant="grid" count={3} />;
   }
@@ -476,104 +428,90 @@ export default function ParadigmsMap() {
 
       {/* Estatísticas */}
       {competences.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-7 gap-4">
-          <Card className="border-border/30 bg-card/50 backdrop-blur-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Total</p>
-                  <p className="text-2xl font-bold text-white">{stats.total}</p>
-                </div>
-                <div className="p-3 rounded-lg bg-primary/10">
-                  <Target className="h-5 w-5 text-primary" />
-                </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-4">
+          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 hover:border-white/20 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-[#780606]/10 border border-[#780606]/20 flex items-center justify-center flex-shrink-0">
+                <Target className="h-5 w-5 text-[#780606]" />
               </div>
-            </CardContent>
-          </Card>
+              <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Total</p>
+                <p className="text-xl sm:text-2xl font-bold text-white">{stats.total}</p>
+              </div>
+            </div>
+          </div>
           
-          <Card className="border-border/30 bg-card/50 backdrop-blur-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Concluídas</p>
-                  <p className="text-2xl font-bold text-green-400">{stats.completed}</p>
-                </div>
-                <div className="p-3 rounded-lg bg-green-500/10">
-                  <CheckCircle2 className="h-5 w-5 text-green-400" />
-                </div>
+          <div className="rounded-xl border border-green-500/20 bg-green-500/5 p-4 hover:border-green-500/40 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-green-500/10 border border-green-500/20 flex items-center justify-center flex-shrink-0">
+                <CheckCircle2 className="h-5 w-5 text-green-400" />
               </div>
-            </CardContent>
-          </Card>
+              <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Concluídas</p>
+                <p className="text-xl sm:text-2xl font-bold text-green-400">{stats.completed}</p>
+              </div>
+            </div>
+          </div>
 
-          <Card className="border-border/30 bg-card/50 backdrop-blur-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Em Progresso</p>
-                  <p className="text-2xl font-bold text-blue-400">{stats.inProgress}</p>
-                </div>
-                <div className="p-3 rounded-lg bg-blue-500/10">
-                  <TrendingUp className="h-5 w-5 text-blue-400" />
-                </div>
+          <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-4 hover:border-blue-500/40 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0">
+                <TrendingUp className="h-5 w-5 text-blue-400" />
               </div>
-            </CardContent>
-          </Card>
+              <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Em Progresso</p>
+                <p className="text-xl sm:text-2xl font-bold text-blue-400">{stats.inProgress}</p>
+              </div>
+            </div>
+          </div>
 
-          <Card className="border-border/30 bg-card/50 backdrop-blur-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Não Iniciadas</p>
-                  <p className="text-2xl font-bold text-amber-400">{stats.notStarted}</p>
-                </div>
-                <div className="p-3 rounded-lg bg-amber-500/10">
-                  <AlertCircle className="h-5 w-5 text-amber-400" />
-                </div>
+          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 hover:border-amber-500/40 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
+                <AlertCircle className="h-5 w-5 text-amber-400" />
               </div>
-            </CardContent>
-          </Card>
+              <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Não Iniciadas</p>
+                <p className="text-xl sm:text-2xl font-bold text-amber-400">{stats.notStarted}</p>
+              </div>
+            </div>
+          </div>
 
-          <Card className="border-border/30 bg-card/50 backdrop-blur-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Iniciante</p>
-                  <p className="text-2xl font-bold text-blue-400">{stats.iniciante}</p>
-                </div>
-                <div className="p-3 rounded-lg bg-blue-500/10">
-                  <TrendingUp className="h-5 w-5 text-blue-400" />
-                </div>
+          <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-4 hover:border-blue-500/40 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0">
+                <TrendingUp className="h-5 w-5 text-blue-400" />
               </div>
-            </CardContent>
-          </Card>
+              <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Iniciante</p>
+                <p className="text-xl sm:text-2xl font-bold text-blue-400">{stats.iniciante}</p>
+              </div>
+            </div>
+          </div>
           
-          <Card className="border-border/30 bg-card/50 backdrop-blur-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Intermediário</p>
-                  <p className="text-2xl font-bold text-purple-400">{stats.intermediario}</p>
-                </div>
-                <div className="p-3 rounded-lg bg-purple-500/10">
-                  <Target className="h-5 w-5 text-purple-400" />
-                </div>
+          <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-4 hover:border-purple-500/40 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center flex-shrink-0">
+                <Target className="h-5 w-5 text-purple-400" />
               </div>
-            </CardContent>
-          </Card>
+              <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Intermediário</p>
+                <p className="text-xl sm:text-2xl font-bold text-purple-400">{stats.intermediario}</p>
+              </div>
+            </div>
+          </div>
           
-          <Card className="border-border/30 bg-card/50 backdrop-blur-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Avançado</p>
-                  <p className="text-2xl font-bold text-primary">{stats.avancado}</p>
-                </div>
-                <div className="p-3 rounded-lg bg-primary/10">
-                  <BarChart3 className="h-5 w-5 text-primary" />
-                </div>
+          <div className="rounded-xl border border-[#780606]/20 bg-[#780606]/5 p-4 hover:border-[#780606]/40 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-[#780606]/10 border border-[#780606]/20 flex items-center justify-center flex-shrink-0">
+                <BarChart3 className="h-5 w-5 text-[#780606]" />
               </div>
-            </CardContent>
-          </Card>
+              <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Avançado</p>
+                <p className="text-xl sm:text-2xl font-bold text-[#780606]">{stats.avancado}</p>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -655,72 +593,6 @@ export default function ParadigmsMap() {
               })}
             </div>
           </div>
-
-          {/* Visão simplificada de progresso */}
-          {progressOverview.length > 0 && (
-            <Card className="border-border/30 bg-card/50 backdrop-blur-sm shadow-xl">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-primary" />
-                  Visão Geral do Progresso
-                </CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Acompanhe o quanto falta para atingir suas metas principais. Cada cartão mostra o nível atual,
-                  a meta e o percentual concluído.
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {progressOverview.map((item) => {
-                  const currentInfo = getLevelInfo(item.current || 1);
-                  const goalInfo = getLevelInfo(item.goal || MAX_LEVEL);
-                  const remainingLevels = Math.max(item.goal - item.current, 0);
-
-                  return (
-                    <div
-                      key={item.id}
-                      className="rounded-2xl border border-white/10 bg-white/[0.01] p-4 sm:p-5 space-y-3"
-                    >
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                        <div>
-                          <p className="text-white font-semibold text-base sm:text-lg">{item.title}</p>
-                          {item.subtitle && (
-                            <p className="text-xs text-muted-foreground mt-0.5">{item.subtitle}</p>
-                          )}
-                        </div>
-                        <div className="flex gap-4 text-right">
-                          <div>
-                            <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Atual</p>
-                            <p className="text-lg font-bold text-white">{item.current}</p>
-                          </div>
-                          <div>
-                            <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Meta</p>
-                            <p className="text-lg font-bold text-primary">{item.goal}</p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="flex-1 h-2.5 rounded-full bg-white/5 overflow-hidden">
-                          <div
-                            className="h-full rounded-full bg-primary transition-all"
-                            style={{ width: `${item.progress}%` }}
-                          />
-                        </div>
-                        <span className="text-sm font-semibold text-white">{item.progress}%</span>
-                      </div>
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs text-muted-foreground gap-2">
-                        <p>
-                          {currentInfo.display} → {goalInfo.display}
-                        </p>
-                        <p>
-                          Faltam {remainingLevels} nível{remainingLevels === 1 ? '' : 's'} ({Math.max(100 - item.progress, 0)}%)
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </CardContent>
-            </Card>
-          )}
 
           {/* Grid de Competências */}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
