@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowUpRight,
@@ -1184,11 +1185,33 @@ function ResourceFormSheet({
   onSubmit,
   isSubmitting,
 }: ResourceFormSheetProps) {
-  if (!isOpen) return null;
+  const [mounted, setMounted] = useState(false);
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-4 sm:py-8 backdrop-blur overflow-y-auto">
-      <div className="relative w-full max-w-3xl max-h-[90vh] rounded-xl border border-white/10 bg-card p-4 sm:p-6 lg:p-8 my-auto">
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
+  if (!isOpen || !mounted) return null;
+
+  const modalContent = (
+    <div 
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-3 xs:p-4"
+      style={{
+        paddingTop: 'max(0.75rem, env(safe-area-inset-top))',
+        paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))',
+        paddingLeft: 'max(0.75rem, env(safe-area-inset-left))',
+        paddingRight: 'max(0.75rem, env(safe-area-inset-right))'
+      }}
+    >
+      <div
+        className="fixed inset-0 bg-black/70 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div 
+        className="relative z-[10000] w-full max-w-3xl max-h-[85vh] sm:max-h-[90vh] rounded-xl border border-white/10 bg-card overflow-hidden flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
         <button
           className="absolute right-3 top-3 sm:right-5 sm:top-5 text-muted-foreground hover:text-white z-10"
           onClick={onClose}
@@ -1197,7 +1220,8 @@ function ResourceFormSheet({
         >
           <X className="h-5 w-5" />
         </button>
-        <div className="space-y-4 sm:space-y-6 overflow-y-auto max-h-[calc(90vh-2rem)] pr-2">
+        <div className="p-4 sm:p-6 lg:p-8 overflow-y-auto flex-1">
+          <div className="space-y-4 sm:space-y-6">
           <div>
             <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-[#780606]">
               {mode === 'create' ? 'Novo recurso' : 'Editar recurso'}
@@ -1323,6 +1347,8 @@ function ResourceFormSheet({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
 
 type ConfirmDeleteDialogProps = {
