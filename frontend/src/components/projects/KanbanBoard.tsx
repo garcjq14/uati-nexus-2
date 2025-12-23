@@ -206,10 +206,10 @@ function DroppableColumn({
   };
 
   return (
-    <div className="flex flex-col">
-      <div className={cn('p-4 rounded-t-lg border-b', column.color)}>
+    <div className="flex flex-col h-full min-h-[500px] max-h-[700px] border border-white/10 rounded-lg overflow-hidden">
+      <div className={cn('p-4 rounded-t-lg border-b flex-shrink-0', column.color)}>
         <div className="flex items-center justify-between mb-2">
-          <h3 className="font-semibold text-white">{column.title}</h3>
+          <h3 className="font-semibold text-white text-sm sm:text-base">{column.title}</h3>
           <span className="text-xs text-muted-foreground bg-white/10 px-2 py-1 rounded">
             {tasks.length}
           </span>
@@ -230,7 +230,7 @@ function DroppableColumn({
       <div
         ref={setNodeRef}
         className={cn(
-          'flex-1 p-4 space-y-3 rounded-b-lg transition-colors min-h-[400px]',
+          'flex-1 p-4 space-y-3 rounded-b-lg transition-colors overflow-y-auto overflow-x-hidden',
           (isOver || isDroppableOver) ? 'bg-[#780606]/5 border-[#780606]/20' : 'bg-white/[0.02]'
         )}
       >
@@ -353,7 +353,7 @@ export function KanbanBoard({ tasks, onTaskMove, onTaskDelete, onAddTask }: Kanb
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="grid grid-cols-3 gap-6 h-full min-h-[600px]">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 w-full overflow-x-auto">
         {columns.map((column) => {
           const columnTasks = getTasksByStatus(column.id);
           return (

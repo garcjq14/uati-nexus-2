@@ -630,15 +630,15 @@ export default function Projects() {
                     <div
                       key={project.id}
                       className={cn(
-                        'group relative w-full rounded-2xl border border-white/10 bg-white/[0.01] p-5 transition-all hover:border-[#780606]/40',
+                        'group relative w-full rounded-2xl border border-white/10 bg-white/[0.01] p-4 sm:p-5 transition-all hover:border-[#780606]/40',
                         selectedProject === project.id && 'border-[#780606]/60 bg-[#780606]/5'
                       )}
                     >
-                      <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start justify-between gap-3 sm:gap-4">
                         <button
                           type="button"
                           onClick={() => handleSelect(project.id)}
-                          className="flex items-start gap-4 flex-1 min-w-0 text-left"
+                          className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0 text-left"
                         >
                           <div
                             className={cn(
@@ -646,14 +646,14 @@ export default function Projects() {
                               project.status === 'em_progresso' && 'bg-[#780606]/10 border-[#780606]/20'
                             )}
                           >
-                            <Code className="h-6 w-6 text-white/80" />
+                            <Code className="h-5 w-5 sm:h-6 sm:w-6 text-white/80" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-3 mb-2">
-                              <h3 className="text-lg font-semibold text-white truncate">{project.title}</h3>
+                            <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
+                              <h3 className="text-base sm:text-lg font-semibold text-white truncate">{project.title}</h3>
                               <span
                                 className={cn(
-                                  'inline-flex items-center rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em]',
+                                  'inline-flex items-center rounded-full border px-2 sm:px-3 py-0.5 sm:py-1 text-[9px] sm:text-[10px] font-semibold uppercase tracking-[0.2em] whitespace-nowrap flex-shrink-0',
                                   project.status === 'finalizado'
                                     ? 'text-emerald-400 border-emerald-400/40 bg-emerald-500/5'
                                     : 'text-[#780606] border-[#780606]/40 bg-[#780606]/10'
@@ -662,12 +662,12 @@ export default function Projects() {
                                 {project.status === 'finalizado' ? 'Finalizado' : 'Em Progresso'}
                               </span>
                             </div>
-                            <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-muted-foreground mb-3">
+                            <p className="text-[9px] sm:text-[10px] font-mono uppercase tracking-[0.3em] text-muted-foreground mb-2 sm:mb-3">
                               {project.type}
                             </p>
                             {project.status === 'em_progresso' && (
-                              <div className="space-y-2">
-                                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                              <div className="space-y-1.5 sm:space-y-2">
+                                <div className="flex items-center justify-between text-[10px] sm:text-xs text-muted-foreground">
                                   <span>Progresso</span>
                                   <span className="font-semibold text-white">{project.progress}%</span>
                                 </div>
@@ -676,16 +676,16 @@ export default function Projects() {
                             )}
                           </div>
                         </button>
-                        <div className="flex items-center gap-2 flex-shrink-0">
+                        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               handleEditProject(project);
                             }}
-                            className="opacity-0 group-hover:opacity-100 p-2 hover:bg-white/10 rounded-lg transition-all text-muted-foreground hover:text-white"
+                            className="opacity-0 group-hover:opacity-100 p-1.5 sm:p-2 hover:bg-white/10 rounded-lg transition-all text-muted-foreground hover:text-white"
                             aria-label="Editar projeto"
                           >
-                            <Edit className="h-4 w-4" />
+                            <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                           </button>
                           <button
                             onClick={(e) => {
@@ -693,12 +693,12 @@ export default function Projects() {
                               handleDeleteProject(project.id);
                             }}
                             disabled={isDeletingProject === project.id}
-                            className="opacity-0 group-hover:opacity-100 p-2 hover:bg-red-500/10 rounded-lg transition-all text-muted-foreground hover:text-red-400 disabled:opacity-50"
+                            className="opacity-0 group-hover:opacity-100 p-1.5 sm:p-2 hover:bg-red-500/10 rounded-lg transition-all text-muted-foreground hover:text-red-400 disabled:opacity-50"
                             aria-label="Deletar projeto"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                           </button>
-                          <ArrowUpRight className="h-5 w-5 text-muted-foreground group-hover:text-[#780606] transition-colors" />
+                          <ArrowUpRight className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground group-hover:text-[#780606] transition-colors flex-shrink-0" />
                         </div>
                       </div>
                     </div>
@@ -875,18 +875,22 @@ export default function Projects() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-4 sm:p-6">
                 {activeProject ? (
-                  <KanbanBoard
-                    tasks={localTasks as any}
-                    onTaskMove={moveTask}
-                    onTaskDelete={deleteTask}
-                    onAddTask={(status) => {
-                      if (!activeProject) return;
-                      setShowAddTask(true);
-                      localStorage.setItem('newTaskStatus', status);
-                    }}
-                  />
+                  <div className="w-full overflow-x-auto">
+                    <div className="min-w-[900px] md:min-w-0">
+                      <KanbanBoard
+                        tasks={localTasks as any}
+                        onTaskMove={moveTask}
+                        onTaskDelete={deleteTask}
+                        onAddTask={(status) => {
+                          if (!activeProject) return;
+                          setShowAddTask(true);
+                          localStorage.setItem('newTaskStatus', status);
+                        }}
+                      />
+                    </div>
+                  </div>
                 ) : (
                   <div className="text-center py-12 text-muted-foreground">
                     <p>Selecione um projeto para ver o Kanban</p>
