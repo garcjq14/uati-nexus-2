@@ -2,7 +2,9 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import { Modal } from '../components/ui/modal';
 import { ProjectStatusBadge } from '../components/projects/ProjectStatusBadge';
+import { KanbanBoard } from '../components/projects/KanbanBoard';
 import {
   ArrowLeft,
   Rocket,
@@ -47,6 +49,13 @@ export default function ProjectDetail() {
   const navigate = useNavigate();
   const { refreshCourseData } = useCourse();
   const { success, error: showError } = useToast();
+  interface Task {
+    id: string;
+    title: string;
+    status: 'todo' | 'doing' | 'done';
+    description?: string;
+  }
+
   interface Project {
     id: string;
     title: string;
@@ -58,6 +67,7 @@ export default function ProjectDetail() {
     repository?: string | null;
     technologies?: string | string[];
     requirements?: string | null;
+    tasks?: Task[];
   }
 
   const [project, setProject] = useState<Project | null>(null);
@@ -76,11 +86,16 @@ export default function ProjectDetail() {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [showAddMilestone, setShowAddMilestone] = useState(false);
   const [newMilestone, setNewMilestone] = useState({ title: '', description: '' });
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [showAddTask, setShowAddTask] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [isMovingTask, setIsMovingTask] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) {
       fetchProject();
       fetchMilestones();
+      fetchTasks();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
@@ -104,6 +119,72 @@ export default function ProjectDetail() {
       setMilestones(response.data);
     } catch (error) {
       console.error('Failed to fetch milestones:', error);
+    }
+  };
+
+  const fetchTasks = async () => {
+    if (!id) return;
+    try {
+      const response = await api.get(`/projects/${id}/tasks`);
+      setTasks(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch tasks:', error);
+    }
+  };
+
+  const moveTask = async (taskId: string, newStatus: 'todo' | 'doing' | 'done') => {
+    if (isMovingTask) return;
+    setIsMovingTask(taskId);
+    try {
+      await api.put(`/projects/tasks/${taskId}`, { status: newStatus });
+      await fetchTasks();
+      await fetchProject();
+      await refreshCourseData();
+      success('Tarefa movida com sucesso!');
+    } catch (error) {
+      console.error('Failed to move task:', error);
+      showError('Erro ao mover tarefa. Tente novamente.');
+    } finally {
+      setIsMovingTask(null);
+    }
+  };
+
+  const deleteTask = async (taskId: string) => {
+    try {
+      await api.delete(`/projects/tasks/${taskId}`);
+      await fetchTasks();
+      await fetchProject();
+      await refreshCourseData();
+      success('Tarefa deletada com sucesso!');
+    } catch (error) {
+      console.error('Failed to delete task:', error);
+      showError('Erro ao deletar tarefa. Tente novamente.');
+    }
+  };
+
+  const handleAddTask = async () => {
+    const status = (localStorage.getItem('newTaskStatus') as 'todo' | 'doing' | 'done') || 'todo';
+    if (!newTaskTitle.trim() || !id) {
+      showError('Título da tarefa é obrigatório');
+      return;
+    }
+    try {
+      const taskCount = tasks.length;
+      await api.post(`/projects/${id}/tasks`, {
+        title: newTaskTitle.trim(),
+        status: status,
+        order: taskCount + 1,
+      });
+      await fetchTasks();
+      await fetchProject();
+      await refreshCourseData();
+      setShowAddTask(false);
+      setNewTaskTitle('');
+      localStorage.removeItem('newTaskStatus');
+      success('Tarefa adicionada com sucesso!');
+    } catch (error) {
+      console.error('Failed to add task:', error);
+      showError('Erro ao adicionar tarefa. Tente novamente.');
     }
   };
 
@@ -538,6 +619,42 @@ export default function ProjectDetail() {
               )}
             </CardContent>
           </Card>
+
+          {/* Kanban Board */}
+          <Card className="border-white/5 bg-[#050506]/90">
+            <CardHeader className="p-6 pb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-muted-foreground mb-1">
+                    Tarefas
+                  </p>
+                  <CardTitle className="text-xl text-white">Kanban de Tarefas</CardTitle>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAddTask(true)}
+                  className="border-white/10 hover:bg-white/[0.05]"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Adicionar Tarefa
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="px-6 pb-6 pt-0">
+              <div className="w-full">
+                <KanbanBoard
+                  tasks={tasks as any}
+                  onTaskMove={moveTask}
+                  onTaskDelete={deleteTask}
+                  onAddTask={(status) => {
+                    setShowAddTask(true);
+                    localStorage.setItem('newTaskStatus', status);
+                  }}
+                />
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Sidebar */}
@@ -748,6 +865,58 @@ export default function ProjectDetail() {
           </div>
         </div>
       )}
+
+      {/* Add Task Modal */}
+      <Modal
+        isOpen={showAddTask}
+        onClose={() => {
+          setShowAddTask(false);
+          setNewTaskTitle('');
+          localStorage.removeItem('newTaskStatus');
+        }}
+        title="Adicionar Tarefa"
+        size="md"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="text-xs uppercase tracking-[0.3em] text-muted-foreground block mb-2">
+              Título da Tarefa *
+            </label>
+            <Input
+              value={newTaskTitle}
+              onChange={(e) => setNewTaskTitle(e.target.value)}
+              placeholder="Ex: Implementar autenticação"
+              className="bg-white/[0.02] border-white/10 text-white"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && newTaskTitle.trim()) {
+                  handleAddTask();
+                }
+              }}
+            />
+          </div>
+          <div className="flex gap-3 pt-4">
+            <Button
+              onClick={handleAddTask}
+              disabled={!newTaskTitle.trim()}
+              className="bg-[#780606] hover:bg-[#780606]/90 text-white"
+            >
+              <Save className="mr-2 h-4 w-4" />
+              Adicionar Tarefa
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowAddTask(false);
+                setNewTaskTitle('');
+                localStorage.removeItem('newTaskStatus');
+              }}
+            >
+              <X className="mr-2 h-4 w-4" />
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

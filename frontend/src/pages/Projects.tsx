@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect, memo, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useCourse } from '../contexts/CourseContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -33,7 +33,7 @@ import { ContextualHelp } from '../components/help/ContextualHelp';
 import { useToast } from '../components/feedback/ToastSystem';
 import { useAchievementChecker } from '../hooks/useAchievementChecker';
 
-function ProgressBar({ progress }: { progress: number }) {
+const ProgressBar = memo(function ProgressBar({ progress }: { progress: number }) {
   const barRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -50,7 +50,7 @@ function ProgressBar({ progress }: { progress: number }) {
       />
     </div>
   );
-}
+});
 
 export default function Projects() {
   const navigate = useNavigate();
@@ -155,7 +155,7 @@ export default function Projects() {
     } finally {
       setIsCreatingProject(false);
     }
-  };
+  }, [newProject, showError, success, checkAfterAction, refreshCourseData]);
 
   if (loading) {
     return <LoadingSkeleton variant="grid" count={6} />;
