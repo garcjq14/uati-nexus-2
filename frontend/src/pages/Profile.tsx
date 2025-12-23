@@ -202,12 +202,18 @@ export default function Profile() {
 
   // Carregar dados do perfil
   useEffect(() => {
+    // Carregar headline do backend (user)
+    if (user?.headline) {
+      setProfileData(prev => ({ ...prev, headline: user.headline || '' }));
+    }
+    
+    // Carregar outros dados do localStorage
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        setProfileData({
-          headline: parsed.headline || '',
+        setProfileData(prev => ({
+          ...prev,
           location: parsed.location || '',
           phone: parsed.phone || '',
           website: parsed.website || '',
@@ -220,12 +226,12 @@ export default function Profile() {
           publications: parsed.publications || [],
           skills: parsed.skills || [],
           interests: parsed.interests || [],
-        });
+        }));
       } catch (e) {
         console.error('Failed to parse profile data:', e);
       }
     }
-  }, []);
+  }, [user]);
 
   // Salvar dados do perfil
   const saveProfileData = (data: ProfileData) => {
@@ -653,19 +659,42 @@ export default function Profile() {
                     <div className="flex items-center gap-2 mb-4">
                       <Input
                         value={profileData.headline}
-                        onChange={(e) => saveProfileData({ ...profileData, headline: e.target.value })}
+                        onChange={(e) => setProfileData({ ...profileData, headline: e.target.value })}
                         placeholder="Título profissional (ex: Estudante de Ciência da Computação)"
                         className="bg-white/5 border-white/10 text-white"
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') setEditingSection(null);
+                        onKeyDown={async (e) => {
+                          if (e.key === 'Enter') {
+                            try {
+                              await api.put('/user', { headline: profileData.headline });
+                              await refreshUser();
+                              setEditingSection(null);
+                            } catch (error) {
+                              console.error('Failed to save headline:', error);
+                            }
+                          }
                         }}
                       />
-                      <Button size="sm" variant="ghost" onClick={() => setEditingSection(null)} className="h-8 w-8 p-0">✓</Button>
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        onClick={async () => {
+                          try {
+                            await api.put('/user', { headline: profileData.headline });
+                            await refreshUser();
+                            setEditingSection(null);
+                          } catch (error) {
+                            console.error('Failed to save headline:', error);
+                          }
+                        }} 
+                        className="h-8 w-8 p-0"
+                      >
+                        ✓
+                      </Button>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2 mb-4">
                       <p className="text-xl text-muted-foreground">
-                        {profileData.headline || 'Adicione um título profissional'}
+                        {profileData.headline || user?.headline || 'Adicione um título profissional'}
                       </p>
                       <button onClick={() => setEditingSection('headline')} className="opacity-0 group-hover:opacity-100 transition-opacity">
                         <Edit className="h-3 w-3 text-muted-foreground" />

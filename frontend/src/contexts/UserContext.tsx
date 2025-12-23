@@ -10,6 +10,7 @@ interface User {
   linkedin?: string;
   github?: string;
   twitter?: string;
+  headline?: string;
   onboardingCompleted?: boolean;
   currentMajor?: {
     id: string;

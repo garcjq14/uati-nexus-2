@@ -205,7 +205,7 @@ router.put('/', authenticate, async (req: AuthRequest, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { name, linkedin, github, twitter, portfolio } = req.body;
+    const { name, linkedin, github, twitter, portfolio, headline } = req.body;
     const updateData: any = {};
 
     if (name !== undefined) updateData.name = name;
@@ -213,6 +213,7 @@ router.put('/', authenticate, async (req: AuthRequest, res: Response) => {
     if (github !== undefined) updateData.github = github;
     if (twitter !== undefined) updateData.twitter = twitter;
     if (portfolio !== undefined) updateData.portfolio = portfolio;
+    if (headline !== undefined) updateData.headline = headline;
 
     const updatedUser = await prisma.user.update({
       where: { id: req.userId },
@@ -226,6 +227,7 @@ router.put('/', authenticate, async (req: AuthRequest, res: Response) => {
         linkedin: true,
         github: true,
         twitter: true,
+        headline: true,
       },
     });
 

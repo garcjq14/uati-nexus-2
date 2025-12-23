@@ -21,6 +21,7 @@ model User {
   linkedin           String?
   github             String?
   twitter            String?
+  headline           String?  // Título profissional
   onboardingCompleted Boolean  @default(false)
   currentCourseId    String?
   currentCourse      Course?  @relation("CurrentCourse", fields: [currentCourseId], references: [id], onDelete: SetNull)

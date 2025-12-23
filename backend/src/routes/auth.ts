@@ -220,6 +220,7 @@ router.get('/me', async (req, res) => {
         linkedin: user.linkedin,
         github: user.github,
         twitter: user.twitter,
+        headline: user.headline,
         onboardingCompleted: user.onboardingCompleted 
       } 
     });

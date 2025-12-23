@@ -64,6 +64,7 @@ router.get('/', async (_req, res: Response) => {
         "linkedin" TEXT,
         "github" TEXT,
         "twitter" TEXT,
+        "headline" TEXT,
         "onboardingCompleted" BOOLEAN NOT NULL DEFAULT false,
         "currentCourseId" TEXT,
         "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -113,6 +114,34 @@ router.get('/', async (_req, res: Response) => {
             throw directError; // Relançar se for erro diferente
           }
         }
+      }
+    }
+
+    // SEMPRE adicionar coluna headline se não existir
+    console.log('🔍 Verificando se coluna headline existe em users...');
+    try {
+      const headlineCheck = await prisma.$queryRaw<Array<{column_name: string}>>`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = 'users' 
+        AND column_name = 'headline';
+      `;
+      
+      if (headlineCheck.length === 0) {
+        console.log('📝 Coluna headline NÃO existe - adicionando...');
+        await prisma.$executeRawUnsafe(`ALTER TABLE "users" ADD COLUMN "headline" TEXT;`);
+        console.log('✅ Coluna headline adicionada com sucesso!');
+      } else {
+        console.log('✅ Coluna headline já existe em users');
+      }
+    } catch (headlineError: any) {
+      if (headlineError.message?.includes('already exists') || 
+          headlineError.message?.includes('duplicate column') ||
+          headlineError.code === '42701') {
+        console.log('✅ Coluna headline já existe');
+      } else {
+        console.warn('⚠️  Aviso ao adicionar headline:', headlineError.message);
       }
     }
 
